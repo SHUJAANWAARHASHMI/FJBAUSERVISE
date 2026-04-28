@@ -1,0 +1,12 @@
+{
+  "name": "FJ BAUSERVICE - Raum für Neues schaffen",
+  "description": "Professionelle Abbrucharbeiten, Entkernung und Kernbohrungen in Rosenheim und ganz Deutschland.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "Construction Services",
+    "Project Showcase",
+    "Inquiry System"
+  ]
+}
