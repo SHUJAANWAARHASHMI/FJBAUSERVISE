@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 
 import { translations } from '../lib/translations';
 
-export default function Contact({ settings, lang }: { settings: any, lang: 'de' | 'en' }) {
+export default function Contact({ settings, lang }: { settings: any, lang: 'en' | 'de' }) {
   const t = translations[lang];
   const [formData, setFormData] = useState({
     name: '',
@@ -64,7 +64,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'de' 
           <div className="space-y-6">
             <h2 className="heading-dynamic text-6xl">{t.contact.title}</h2>
             <p className="text-zinc-400 text-lg">
-              {lang === 'en' ? (settings?.description_en || t.contact.subtitle) : (settings?.description || t.contact.subtitle)}
+              {lang === 'de' ? (settings?.description_de || settings?.description || t.contact.subtitle) : (settings?.description_en || settings?.description || t.contact.subtitle)}
             </p>
           </div>
 

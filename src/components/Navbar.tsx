@@ -9,8 +9,8 @@ interface NavbarProps {
   setCurrentPage: (page: string) => void;
   settings: any;
   onAdminTrigger: () => void;
-  lang: 'de' | 'en';
-  setLang: (lang: 'de' | 'en') => void;
+  lang: 'en' | 'de';
+  setLang: (lang: 'en' | 'de') => void;
 }
 
 export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang, setLang }: NavbarProps) {
@@ -23,7 +23,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
     const newCount = clickCount + 1;
     setClickCount(newCount);
     
-    if (newCount >= 5) {
+    if (newCount >= 10) { 
       onAdminTrigger();
       setClickCount(0);
     } else {
@@ -71,16 +71,16 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           <div className="h-6 w-px bg-surface-border mx-2" />
           <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border">
             <button 
-              onClick={() => setLang('de')}
-              className={`px-2 py-0.5 text-xs font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
-            >
-              DE
-            </button>
-            <button 
               onClick={() => setLang('en')}
               className={`px-2 py-0.5 text-xs font-bold rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
             >
               EN
+            </button>
+            <button 
+              onClick={() => setLang('de')}
+              className={`px-2 py-0.5 text-xs font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+            >
+              DE
             </button>
           </div>
           <button className="button-primary ml-4">
@@ -123,16 +123,16 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
             ))}
             <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border self-start mb-4">
               <button 
-                onClick={() => setLang('de')}
-                className={`flex-1 px-4 py-2 text-sm font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500'}`}
-              >
-                DEUTSCH
-              </button>
-              <button 
                 onClick={() => setLang('en')}
                 className={`flex-1 px-4 py-2 text-sm font-bold rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500'}`}
               >
                 ENGLISH
+              </button>
+              <button 
+                onClick={() => setLang('de')}
+                className={`flex-1 px-4 py-2 text-sm font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500'}`}
+              >
+                GERMAN
               </button>
             </div>
             <button className="button-primary w-full justify-center">

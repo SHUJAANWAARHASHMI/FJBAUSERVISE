@@ -3,17 +3,35 @@ import { ArrowRight } from 'lucide-react';
 
 import { translations } from '../lib/translations';
 
-export default function Hero({ settings, lang }: { settings: any, lang: 'de' | 'en' }) {
+export default function Hero({ settings, lang }: { settings: any, lang: 'en' | 'de' }) {
   const t = translations[lang];
-  const currentSlogan = lang === 'en' ? (settings?.slogan_en || t.hero.stats.contact) : (settings?.slogan || 'Raum für Neues Schaffen');
-  const [line1, line2, line3] = currentSlogan.split(' ');
-  const currentDesc = lang === 'en' ? (settings?.description_en || t.contact.subtitle) : (settings?.description || 'Ihr Partner für Abbruch und Rückbau in Deutschland.');
+  
+  const currentSlogan = lang === 'de' 
+    ? (settings?.slogan_de || settings?.slogan || "Raum für Neues Schaffen") 
+    : (settings?.slogan_en || settings?.slogan || 'Building New Paths');
+    
+  const currentDesc = lang === 'de'
+    ? (settings?.description_de || settings?.description || "Ihr Partner für Abbruch und Rückbau in Deutschland.")
+    : (settings?.description_en || settings?.description || 'Your partner for demolition and reconstruction in Germany.');
+
+  const heroImage = settings?.hero_image_url || 'https://images.unsplash.com/photo-1541913057-21998177505b?q=80&w=2070&auto=format&fit=crop';
 
   return (
     <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto">
       <div className="grid lg:grid-cols-12 gap-8">
         {/* Main Hero Card */}
         <div className="lg:col-span-8 bg-surface-card border border-surface-border p-10 relative overflow-hidden group min-h-[500px] flex flex-col justify-end">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src={heroImage} 
+              alt="Hero" 
+              className="w-full h-full object-cover opacity-20 filter grayscale group-hover:scale-105 transition-transform duration-1000"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-card via-surface-card/50 to-transparent" />
+          </div>
+
           <div className="absolute top-0 right-0 p-4">
             <span className="bg-primary/10 text-primary border border-primary/20 px-4 py-1 text-xs font-bold uppercase tracking-wider">
               {t.hero.badge}
@@ -22,18 +40,16 @@ export default function Hero({ settings, lang }: { settings: any, lang: 'de' | '
           
           {/* Background Decorative Text */}
           <div className="absolute top-10 left-10 opacity-[0.03] select-none pointer-events-none">
-            <h2 className="text-[200px] leading-none font-black uppercase">{t.hero.trust}</h2>
+            <h2 className="text-[120px] md:text-[200px] leading-none font-black uppercase">{t.hero.trust}</h2>
           </div>
 
           <div className="relative z-10 space-y-8">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="heading-dynamic text-6xl md:text-8xl max-w-2xl leading-[0.9]"
+              className="heading-dynamic text-5xl md:text-8xl max-w-2xl leading-[1.1] md:leading-[0.9]"
             >
-              {line1} <br />
-              <span className="text-white/50">{line2}</span> <br />
-              {line3}
+              {currentSlogan}
             </motion.h1>
             
             <motion.p 

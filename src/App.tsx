@@ -17,6 +17,7 @@ import WhyUs from './components/WhyUs';
 import CTA from './components/CTA';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import ProjectGallery from './components/ProjectGallery';
 import AdminPanel from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 
@@ -26,31 +27,51 @@ interface SiteSettings {
   name: string;
   slogan: string;
   slogan_en?: string;
+  slogan_de?: string;
   description: string;
   description_en?: string;
+  description_de?: string;
   phone: string;
   email: string;
   address: string;
+  hero_image_url?: string;
+  about_image_url?: string;
+  cta_image_url?: string;
+  contact_image_url?: string;
 }
 
 interface Project {
   id: string;
   title: string;
   title_en?: string;
+  title_de?: string;
   category: string;
   category_en?: string;
+  category_de?: string;
   image_url: string;
+  description?: string;
+  description_en?: string;
+  description_de?: string;
 }
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [language, setLanguage] = useState<'de' | 'en'>('de');
+  const [language, setLanguage] = useState<'en' | 'de'>(
+    (localStorage.getItem('lang') as 'en' | 'de') || 'de'
+  );
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
   const t = translations[language];
+
+  // Persist language
+  useEffect(() => {
+    localStorage.setItem('lang', language);
+    document.documentElement.lang = language;
+    document.documentElement.dir = 'ltr'; // German and English are both LTR
+  }, [language]);
 
   const fetchData = async () => {
     try {
@@ -85,6 +106,15 @@ export default function App() {
             <Hero settings={siteSettings} lang={language} />
             <Services lang={language} />
             <WhyUs lang={language} />
+            <section className="py-24 px-6 max-w-7xl mx-auto space-y-16">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <h2 className="heading-dynamic text-5xl md:text-7xl">{t.nav.projects}</h2>
+                <p className="text-zinc-500 max-w-md">
+                  {language === 'de' ? 'Hier finden Sie eine Auswahl unserer aktuellsten Projekte und Referenzen.' : 'Here you can find a selection of our most recent projects and references.'}
+                </p>
+              </div>
+              <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
+            </section>
             <CTA settings={siteSettings} lang={language} />
             <Contact settings={siteSettings} lang={language} />
           </>
@@ -96,17 +126,21 @@ export default function App() {
             <div className="grid lg:grid-cols-2 gap-16">
               <div className="space-y-8 text-zinc-400 text-lg">
                 <p>
-                  {siteSettings?.name || 'FJ Bauservice'} {language === 'de' ? 'ist ein Fachunternehmen mit Sitz in Rosenheim,' : 'is a professional company based in Rosenheim,'} 
-                  {language === 'de' ? 'das sich auf professionelle Abbrucharbeiten, Entkernung und Kernbohrungen spezialisiert hat.' : 'specializing in professional demolition, gutting and core drilling.'}
+                  {siteSettings?.name || 'FJ Bauservice'} 
+                  {language === 'de' 
+                    ? ' ist ein professionelles Unternehmen mit Sitz in Rosenheim, das sich auf professionellen Abbruch, Entkernung und Kernbohrungen spezialisiert hat.'
+                    : ' is a professional company based in Rosenheim, specializing in professional demolition, gutting and core drilling.'}
                 </p>
                 <p>
-                  Unter dem Motto "{language === 'en' ? (siteSettings?.slogan_en || t.hero.stats.contact) : (siteSettings?.slogan || 'Raum für Neues schaffen')}" setzen wir Projekte mit höchster Präzision und Zuverlässigkeit um. 
-                  {language === 'de' ? 'Unser Team steht für Qualität, Termintreue und saubere Ausführung bei jedem Auftrag.' : 'Our team stands for quality, punctuality and clean execution on every job.'}
+                  {language === 'de' ? 'Unter dem Motto' : 'Under the motto'} "{language === 'en' ? (siteSettings?.slogan_en || t.nav.offer) : (siteSettings?.slogan_de || siteSettings?.slogan || 'Raum für Neues schaffen')}" 
+                  {language === 'de' 
+                    ? ' führen wir Projekte mit höchster Präzision und Zuverlässigkeit aus. Unser Team steht für Qualität, Termintreue und saubere Ausführung bei jedem Auftrag.'
+                    : ' we execute projects with the highest precision and reliability. Our team stands for quality, punctuality and clean execution on every job.'}
                 </p>
               </div>
               <div className="aspect-video bg-surface-card border border-surface-border overflow-hidden">
                 <img 
-                  src="https://picsum.photos/seed/team/1200/800?grayscale" 
+                  src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
                   alt="Team" 
                   className="w-full h-full object-cover opacity-60"
                   referrerPolicy="no-referrer"
@@ -126,30 +160,7 @@ export default function App() {
                 {language === 'de' ? 'Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte.' : 'An insight into our successfully completed demolition and dismantling projects.'}
               </p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.length > 0 ? (
-                projects.map((project) => (
-                  <div key={project.id} className="aspect-square bg-surface-card border border-surface-border relative group overflow-hidden">
-                    <img 
-                      src={project.image_url} 
-                      alt={project.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 p-8 flex flex-col justify-end gap-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <span className="bg-primary text-black text-[10px] font-black px-2 py-1 uppercase w-fit">
-                        {language === 'en' ? (project.category_en || project.category) : project.category}
-                      </span>
-                      <h3 className="heading-dynamic text-2xl">
-                        {language === 'en' ? (project.title_en || project.title) : project.title}
-                      </h3>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-zinc-500 italic col-span-full">{language === 'de' ? 'Keine Projekte gefunden.' : 'No projects found.'}</p>
-              )}
-            </div>
+            <ProjectGallery projects={projects} lang={language} />
           </section>
         );
       case 'contact':

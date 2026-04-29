@@ -18,8 +18,8 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
         <div className="space-y-12">
           <div className="space-y-6">
             <h2 className="heading-dynamic text-5xl md:text-7xl leading-tight">
-              {lang === 'de' ? 'Warum FJ' : 'Why'}<br />
-              <span className="text-primary">{lang === 'de' ? 'Bauservice?' : 'FJ Bauservice?'}</span>
+              {t.whyUs.title.split(' ')[0]}<br />
+              <span className="text-primary">{t.whyUs.title.split(' ').slice(1).join(' ')}</span>
             </h2>
             <p className="text-zinc-400 text-lg max-w-xl">
               {t.whyUs.subtitle}

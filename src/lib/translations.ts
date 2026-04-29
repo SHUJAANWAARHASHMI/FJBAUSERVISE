@@ -20,7 +20,7 @@ export const translations = {
     },
     services: {
       title: 'Unsere Leistungen',
-      all: 'Alle Leistungen',
+      all: 'Alle Projekte',
       items: [
         { id: '01', title: 'Abbrucharbeiten', desc: 'Fachgerechter Abbruch von Wänden und Gebäudeteilen mit moderner Ausrüstung.' },
         { id: '02', title: 'Kernbohrungen', desc: 'Präzise Bohrungen in Beton, Mauerwerk und Naturstein für Installationen.' },
