@@ -12,9 +12,10 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onClose, settings, projects, refreshData, lang }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'projects' | 'inquiries'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'projects' | 'inquiries' | 'data'>('settings');
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<any>(null);
   const [imageHistory, setImageHistory] = useState<string[]>([]);
@@ -311,6 +312,104 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
     onClose();
   };
 
+  const handleExportData = async () => {
+    try {
+      setIsSaving(true);
+      // Fetch all data from Supabase
+      const { data: settingsData } = await supabase.from('site_settings').select('*');
+      const { data: projectsData } = await supabase.from('projects').select('*');
+      const { data: inquiriesData } = await supabase.from('contact_inquiries').select('*');
+
+      const backup = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        site_settings: settingsData || [],
+        projects: projectsData || [],
+        contact_inquiries: inquiriesData || []
+      };
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fj-bauservice-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert(lang === 'de' ? 'Backup erfolgreich erstellt!' : 'Backup created successfully!');
+    } catch (error: any) {
+      alert("Export Error: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!confirm(lang === 'de' 
+      ? 'ACHTUNG: Dies wird Ihre aktuellen Daten überschreiben. Fortfahren?' 
+      : 'WARNING: This will overwrite your current database data. Continue?')) {
+      e.target.value = '';
+      return;
+    }
+
+    setIsRestoring(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = JSON.parse(event.target?.result as string);
+        
+        // Basic Validation
+        if (!content.site_settings || !content.projects) {
+          throw new Error("Invalid backup file structure.");
+        }
+
+        // 1. Restore Settings
+        if (content.site_settings.length > 0) {
+          const { id, updated_at, created_at, ...settingsToUpdate } = content.site_settings[0];
+          await supabase.from('site_settings').upsert({ id: 1, ...settingsToUpdate });
+        }
+
+        // 2. Restore Projects
+        // First delete existing ones to avoid confusion, or upsert if IDs match
+        // We'll delete and re-insert for a clean restore
+        await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (content.projects.length > 0) {
+          const projectsToInsert = content.projects.map((p: any) => {
+            const { id, created_at, ...data } = p;
+            return data;
+          });
+          await supabase.from('projects').insert(projectsToInsert);
+        }
+
+        // 3. Restore Inquiries
+        if (content.contact_inquiries && content.contact_inquiries.length > 0) {
+          await supabase.from('contact_inquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          const inquiriesToInsert = content.contact_inquiries.map((i: any) => {
+            const { id, created_at, ...data } = i;
+            return data;
+          });
+          await supabase.from('contact_inquiries').insert(inquiriesToInsert);
+        }
+
+        alert(lang === 'de' ? 'Daten erfolgreich wiederhergestellt!' : 'Data restored successfully!');
+        refreshData();
+        if (activeTab === 'inquiries') fetchInquiries();
+      } catch (error: any) {
+        console.error("Import Error:", error);
+        alert("Import Error: " + error.message);
+      } finally {
+        setIsRestoring(false);
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -342,6 +441,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
               { id: 'settings', label: lang === 'de' ? 'Webseiten-Info' : 'Site Info', icon: <LayoutDashboard size={18} /> },
               { id: 'projects', label: lang === 'de' ? 'Projekte' : 'Projects', icon: <Briefcase size={18} /> },
               { id: 'inquiries', label: lang === 'de' ? 'Anfragen' : 'Inquiries', icon: <Mail size={18} /> },
+              { id: 'data', label: lang === 'de' ? 'Daten & Backup' : 'Data & Backup', icon: <Save size={18} /> },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -484,7 +584,6 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   </div>
                 </div>
 
-                {/* Social Media Section */}
                 <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Social Media Links' : 'Social Media Links'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
@@ -801,21 +900,9 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                         {lang === 'de' ? (project.category_de || project.category) : (project.category_en || project.category)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => startEditProject(project)}
-                        className="text-zinc-600 hover:text-primary transition-colors p-2"
-                        title={lang === 'de' ? 'Bearbeiten' : 'Edit'}
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProject(project)}
-                        className="text-zinc-600 hover:text-red-500 transition-colors p-2"
-                        title={lang === 'de' ? 'Löschen' : 'Delete'}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => startEditProject(project)} className="p-2 text-zinc-500 hover:text-primary"><Pencil size={16} /></button>
+                      <button onClick={() => handleDeleteProject(project)} className="p-2 text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button>
                     </div>
                   </div>
                 ))}
@@ -824,32 +911,115 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
           )}
 
           {activeTab === 'inquiries' && (
-            <div className="space-y-10">
+            <div className="space-y-12">
               <div className="space-y-2">
-                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Kontaktanfragen' : 'Inquiries'}</h3>
-                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Alle Nachrichten über das Kontaktformular.' : 'All messages from the contact form.'}</p>
+                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Kontakt-Anfragen' : 'Contact Inquiries'}</h3>
+                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Erhaltene Nachrichten über das Kontaktformular.' : 'Messages received through the contact form.'}</p>
               </div>
 
-              <div className="space-y-4">
-                {inquiries.length > 0 ? inquiries.map(inquiry => (
-                  <div key={inquiry.id} className="bg-surface-dark border border-surface-border p-6 rounded-sm space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h5 className="font-bold text-lg">{inquiry.subject || 'No Subject'}</h5>
-                        <p className="text-xs text-primary font-bold uppercase tracking-wider">{inquiry.name} ({inquiry.email})</p>
+              {loadingInquiries ? (
+                <div className="flex justify-center p-12">
+                  <Loader2 className="animate-spin text-primary" size={40} />
+                </div>
+              ) : inquiries.length === 0 ? (
+                <div className="p-12 text-center border border-dashed border-surface-border">
+                  <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">{lang === 'de' ? 'Keine Anfragen gefunden' : 'No inquiries found'}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {inquiries.map((inquiry) => (
+                    <div key={inquiry.id} className="bg-surface-dark border border-surface-border p-6 space-y-4 relative group">
+                      <button 
+                        onClick={() => handleDeleteInquiry(inquiry.id)}
+                        className="absolute top-6 right-6 text-zinc-600 hover:text-red-500 transition-colors p-2"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      
+                      <div className="flex flex-col md:flex-row gap-4 md:items-center text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-primary">{inquiry.name}</span>
+                        <span className="text-zinc-500 hidden md:block">•</span>
+                        <span className="text-zinc-400">{inquiry.email}</span>
+                        <span className="text-zinc-500 hidden md:block">•</span>
+                        <span className="text-zinc-600">
+                          {new Date(inquiry.created_at).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[10px] text-zinc-600 font-mono">{new Date(inquiry.created_at).toLocaleString()}</span>
-                        <button onClick={() => handleDeleteInquiry(inquiry.id)} className="text-zinc-600 hover:text-red-500"><Trash2 size={16} /></button>
+
+                      <div className="space-y-2">
+                        <h4 className="font-bold text-white">{inquiry.subject}</h4>
+                        <p className="text-zinc-400 text-sm leading-relaxed">{inquiry.message}</p>
                       </div>
                     </div>
-                    <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">{inquiry.message}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'data' && (
+            <div className="space-y-12">
+              <div className="space-y-2">
+                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Daten-Verwaltung' : 'Data Management'}</h3>
+                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Sichern Sie Ihre Webseitendaten oder stellen Sie diese aus einer Datei wieder her.' : 'Backup your website data or restore it from a file.'}</p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-surface-dark border border-surface-border p-8 space-y-6 flex flex-col">
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-sm mb-2">
+                    <Save className="text-primary mb-3" size={32} />
+                    <h4 className="font-bold text-lg mb-1">{lang === 'de' ? 'Backup erstellen' : 'Create Backup'}</h4>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                      {lang === 'de' 
+                        ? 'Exportiert alle Projekte, Webseiten-Infos und Kontakt-Anfragen in eine JSON-Datei.' 
+                        : 'Exports all projects, site information, and contact inquiries into a JSON file.'}
+                    </p>
                   </div>
-                )) : (
-                  <div className="text-center py-20 border border-dashed border-surface-border rounded-sm text-zinc-600 font-bold uppercase text-xs">
-                    {lang === 'de' ? 'Keine Anfragen vorhanden.' : 'No inquiries found.'}
+                  <button 
+                    onClick={handleExportData}
+                    disabled={isSaving}
+                    className="button-primary w-full justify-center gap-2 mt-auto"
+                  >
+                    {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                    {lang === 'de' ? 'Backup jetzt herunterladen' : 'Download Backup Now'}
+                  </button>
+                </div>
+
+                <div className="bg-surface-dark border border-surface-border p-8 space-y-6 flex flex-col">
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-sm mb-2">
+                    <Trash2 className="text-red-500 mb-3" size={32} />
+                    <h4 className="font-bold text-lg mb-1">{lang === 'de' ? 'Daten wiederherstellen' : 'Restore Data'}</h4>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                      {lang === 'de' 
+                        ? 'Laden Sie eine Backup-Datei hoch, um Ihre aktuellen Daten zu überschreiben. Dieser Vorgang ist endgültig.' 
+                        : 'Upload a backup file to overwrite your current data. This process is final.'}
+                    </p>
                   </div>
-                )}
+                  <div className="mt-auto">
+                    <label className="cursor-pointer">
+                      <div className="button-primary w-full justify-center gap-2 bg-zinc-900 border-zinc-700 hover:bg-zinc-800 text-white">
+                        {isRestoring ? <Loader2 className="animate-spin" /> : <Mail size={20} />}
+                        {lang === 'de' ? 'Backup-Datei auswählen' : 'Select Backup File'}
+                      </div>
+                      <input 
+                        type="file" 
+                        accept=".json" 
+                        onChange={handleImportData} 
+                        disabled={isRestoring} 
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-zinc-950 border border-zinc-900 rounded-sm">
+                <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-4">{lang === 'de' ? 'Hin Weise zur Datensicherung' : 'Backup Guidelines'}</h5>
+                <ul className="text-[11px] text-zinc-500 space-y-2 list-disc pl-4 leading-relaxed">
+                  <li>{lang === 'de' ? 'Backups enthalten keine Bilder selbst, sondern nur die URLs zu den Bildern.' : 'Backups do not contain the actual images, but only the URLs to the images.'}</li>
+                  <li>{lang === 'de' ? 'Die Wiederherstellung löscht alle bestehenden Projekte und Anfragen vor dem Import.' : 'Restore will delete all existing projects and inquiries before importing.'}</li>
+                  <li>{lang === 'de' ? 'Empfohlen: Erstellen Sie IMMER ein Backup vor einer Wiederherstellung.' : 'Recommended: ALWAYS create a backup before performing a restore.'}</li>
+                </ul>
               </div>
             </div>
           )}
