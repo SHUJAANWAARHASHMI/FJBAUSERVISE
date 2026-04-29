@@ -103,8 +103,8 @@ export default function App() {
       case 'home':
         return (
           <>
-            <Hero settings={siteSettings} lang={language} />
-            <Services lang={language} />
+            <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
+            <Services lang={language} setCurrentPage={setCurrentPage} />
             <WhyUs lang={language} />
             <section className="py-24 px-6 max-w-7xl mx-auto space-y-16">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
@@ -115,7 +115,7 @@ export default function App() {
               </div>
               <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
             </section>
-            <CTA settings={siteSettings} lang={language} />
+            <CTA settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Contact settings={siteSettings} lang={language} />
           </>
         );
@@ -147,10 +147,15 @@ export default function App() {
                 />
               </div>
             </div>
+            <div className="pt-12">
+                <button onClick={() => setCurrentPage('contact')} className="button-primary">
+                  {t.nav.offer}
+                </button>
+            </div>
           </section>
         );
       case 'services':
-        return <Services lang={language} />;
+        return <Services lang={language} setCurrentPage={setCurrentPage} />;
       case 'projects':
         return (
           <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
@@ -165,8 +170,33 @@ export default function App() {
         );
       case 'contact':
         return <Contact settings={siteSettings} lang={language} />;
+      case 'legal':
+        return (
+          <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto space-y-12">
+            <h1 className="heading-dynamic text-6xl">Legal Information</h1>
+            <div className="prose prose-invert max-w-none space-y-8 text-zinc-400">
+              <div>
+                <h2 className="text-xl font-bold text-white uppercase">{t.footer.impressum}</h2>
+                <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap">
+                  {settings?.name || 'FJ Bauservice'}{'\n'}
+                  {settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
+                  {language === 'de' ? 'Vertreten durch' : 'Represented by'}: Amjad Ali{'\n'}
+                  {language === 'de' ? 'Kontakt' : 'Contact'}: {settings?.email || 'amjad.ali@fj-bauservice.com'}
+                </div>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white uppercase">{t.footer.privacy}</h2>
+                <p>
+                  {language === 'de' 
+                    ? 'Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO).'
+                    : 'The protection of your personal data is a special concern for us. We process your data exclusively on the basis of the legal provisions (GDPR).'}
+                </p>
+              </div>
+            </div>
+          </section>
+        );
       default:
-        return <Hero settings={siteSettings} lang={language} />;
+        return <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />;
     }
   };
 
@@ -203,7 +233,7 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Footer settings={siteSettings} lang={language} />
+      <Footer settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
 
       <AnimatePresence>
         {isAdminPanelOpen && (

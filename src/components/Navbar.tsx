@@ -83,7 +83,10 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               DE
             </button>
           </div>
-          <button className="button-primary ml-4">
+          <button 
+            onClick={() => setCurrentPage('contact')}
+            className="button-primary ml-4"
+          >
             {t.nav.offer} <ArrowRight size={16} />
           </button>
         </div>
@@ -135,7 +138,13 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
                 GERMAN
               </button>
             </div>
-            <button className="button-primary w-full justify-center">
+            <button 
+              onClick={() => {
+                setCurrentPage('contact');
+                setIsMobileMenuOpen(false);
+              }}
+              className="button-primary w-full justify-center"
+            >
               {t.nav.offer} <ArrowRight size={20} />
             </button>
           </motion.div>

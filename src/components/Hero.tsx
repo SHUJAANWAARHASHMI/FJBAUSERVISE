@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 
 import { translations } from '../lib/translations';
 
-export default function Hero({ settings, lang }: { settings: any, lang: 'en' | 'de' }) {
+export default function Hero({ settings, lang, setCurrentPage }: { settings: any, lang: 'en' | 'de', setCurrentPage: (page: string) => void }) {
   const t = translations[lang];
   
   const currentSlogan = lang === 'de' 
@@ -66,7 +66,10 @@ export default function Hero({ settings, lang }: { settings: any, lang: 'en' | '
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <button className="button-primary group/btn">
+              <button 
+                onClick={() => setCurrentPage('contact')}
+                className="button-primary group/btn"
+              >
                 {t.nav.offer} 
                 <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" size={20} />
               </button>
@@ -86,7 +89,10 @@ export default function Hero({ settings, lang }: { settings: any, lang: 'en' | '
             <span className="text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.projects}</span>
           </div>
 
-          <div className="flex-1 bg-primary p-8 flex items-center justify-between group cursor-pointer">
+          <div 
+            onClick={() => setCurrentPage('contact')}
+            className="flex-1 bg-primary p-8 flex items-center justify-between group cursor-pointer"
+          >
             <div className="space-y-1">
               <span className="text-black text-2xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>
             </div>

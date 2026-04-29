@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { translations } from '../lib/translations';
 
-export default function CTA({ settings, lang }: { settings: any, lang: 'de' | 'en' }) {
+export default function CTA({ settings, lang, setCurrentPage }: { settings: any, lang: 'de' | 'en', setCurrentPage: (page: string) => void }) {
   const t = translations[lang];
   const ctaImage = settings?.cta_image_url || 'https://images.unsplash.com/photo-1590644365607-1c5a519a9a37?q=80&w=2070&auto=format&fit=crop';
 
@@ -34,7 +34,10 @@ export default function CTA({ settings, lang }: { settings: any, lang: 'de' | 'e
           </p>
         </div>
         
-        <button className="bg-black text-white hover:bg-white hover:text-black px-12 py-6 font-bold uppercase tracking-widest text-lg border-2 border-black transition-all shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:shadow-none">
+        <button 
+          onClick={() => setCurrentPage('contact')}
+          className="bg-black text-white hover:bg-white hover:text-black px-12 py-6 font-bold uppercase tracking-widest text-lg border-2 border-black transition-all shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:shadow-none"
+        >
           {t.cta.button}
         </button>
       </div>

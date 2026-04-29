@@ -1,7 +1,7 @@
 import { ArrowUp, Facebook, Instagram, Linkedin, Phone, Mail } from 'lucide-react';
 import { translations } from '../lib/translations';
 
-export default function Footer({ settings, lang }: { settings: any, lang: 'en' | 'de' }) {
+export default function Footer({ settings, lang, setCurrentPage }: { settings: any, lang: 'en' | 'de', setCurrentPage: (page: string) => void }) {
   const t = translations[lang];
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -38,11 +38,11 @@ export default function Footer({ settings, lang }: { settings: any, lang: 'en' |
         <div className="md:col-span-2 space-y-6">
           <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">{lang === 'de' ? 'Links' : 'Links'}</h4>
           <ul className="space-y-4 text-sm font-medium">
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"><span>→</span> {t.nav.home}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"><span>→</span> {t.nav.about}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"><span>→</span> {t.nav.services}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"><span>→</span> {t.nav.projects}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"><span>→</span> {t.nav.contact}</a></li>
+            <li><button onClick={() => setCurrentPage('home')} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors text-left w-full"><span>→</span> {t.nav.home}</button></li>
+            <li><button onClick={() => setCurrentPage('about')} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors text-left w-full"><span>→</span> {t.nav.about}</button></li>
+            <li><button onClick={() => setCurrentPage('services')} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors text-left w-full"><span>→</span> {t.nav.services}</button></li>
+            <li><button onClick={() => setCurrentPage('projects')} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors text-left w-full"><span>→</span> {t.nav.projects}</button></li>
+            <li><button onClick={() => setCurrentPage('contact')} className="text-zinc-400 hover:text-white flex items-center gap-2 transition-colors text-left w-full"><span>→</span> {t.nav.contact}</button></li>
           </ul>
         </div>
 
@@ -69,9 +69,9 @@ export default function Footer({ settings, lang }: { settings: any, lang: 'en' |
         <div className="md:col-span-3 space-y-6">
           <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">{lang === 'de' ? 'Rechtliches' : 'Legal'}</h4>
           <ul className="space-y-4 text-sm text-zinc-400 font-medium">
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors">{t.footer.impressum}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors">{t.footer.privacy}</a></li>
-            <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors">FAQ</a></li>
+            <li><button onClick={() => setCurrentPage('legal')} className="hover:text-white transition-colors">{t.footer.impressum}</button></li>
+            <li><button onClick={() => setCurrentPage('legal')} className="hover:text-white transition-colors">{t.footer.privacy}</button></li>
+            <li><button onClick={() => setCurrentPage('contact')} className="hover:text-white transition-colors">FAQ</button></li>
           </ul>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function Footer({ settings, lang }: { settings: any, lang: 'en' |
         <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 {settings?.name || 'FJ BAUSERVICE'}.</p>
         <div className="flex items-center gap-8">
           <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">Rosenheim, DE</p>
-          <a href="#" className="text-primary text-[10px] font-black uppercase tracking-[0.2em]">WHATSAPP: {settings?.phone || '0159 06142923'}</a>
+          <a href={`https://wa.me/${(settings?.phone || '0159 06142923').replace(/\s+/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary text-[10px] font-black uppercase tracking-[0.2em]">WHATSAPP: {settings?.phone || '0159 06142923'}</a>
         </div>
       </div>
 
