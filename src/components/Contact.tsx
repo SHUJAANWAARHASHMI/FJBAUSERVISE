@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Send, MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Facebook, Instagram, Linkedin } from 'lucide-react';
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -100,9 +100,43 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
             </div>
           </div>
 
-          {/* Mini Map Placeholder */}
-          <div className="h-64 bg-surface-dark border border-surface-border flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
-            Google Maps Interactive View
+          {/* Social Icons */}
+          <div className="pt-4 flex gap-4">
+            {[
+              { Icon: Facebook, url: settings?.facebook_url },
+              { Icon: Instagram, url: settings?.instagram_url },
+              { Icon: Linkedin, url: settings?.linkedin_url }
+            ].filter(s => s.url).map(({ Icon, url }, idx) => (
+              <a 
+                key={idx} 
+                href={url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-12 h-12 border border-surface-border flex items-center justify-center text-white hover:bg-primary hover:text-black transition-all"
+              >
+                <Icon size={20} />
+              </a>
+            ))}
+          </div>
+
+          {/* Mini Map */}
+          <div className="h-64 bg-surface-dark border border-surface-border overflow-hidden">
+            {settings?.google_maps_url ? (
+              <iframe 
+                src={settings.google_maps_url} 
+                width="100%" 
+                height="100%" 
+                style={{ border: 0, filter: 'grayscale(1) invert(0.9) contrast(1.2)' }} 
+                allowFullScreen={false} 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Location Map"
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
+                Google Maps Dynamic View
+              </div>
+            )}
           </div>
         </div>
 

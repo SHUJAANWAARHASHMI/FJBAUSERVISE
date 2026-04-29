@@ -49,7 +49,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
         </div>
 
         {/* Bento Grid Visual */}
-        <div className="grid grid-cols-2 gap-4 h-[600px]">
+        <div className="grid grid-cols-2 gap-4 h-[400px] md:h-[600px]">
           <div className="bg-surface-card border border-surface-border relative overflow-hidden group">
             <img 
               src="https://picsum.photos/seed/build1/600/800?grayscale" 
@@ -59,7 +59,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
             />
           </div>
           <div className="space-y-4">
-            <div className="bg-surface-card border border-surface-border h-1/2 relative overflow-hidden group">
+            <div className="bg-surface-card border border-surface-border h-[calc(50%-8px)] md:h-[calc(50%-8px)] relative overflow-hidden group">
               <img 
                 src="https://picsum.photos/seed/build2/600/600?grayscale" 
                 className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" 
@@ -67,8 +67,8 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="bg-primary h-[calc(50%-16px)] flex flex-col justify-end p-8 gap-2">
-               <span className="text-black text-4xl font-black font-display leading-tight">100% SUSTAINABILITY</span>
+            <div className="bg-primary h-[calc(50%-8px)] flex flex-col justify-end p-4 md:p-8 gap-2">
+               <span className="text-black text-xl md:text-4xl font-black font-display leading-tight uppercase">100% {lang === 'de' ? 'Nachhaltigkeit' : 'Sustainability'}</span>
             </div>
           </div>
         </div>

@@ -71,13 +71,10 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
   const [projectForm, setProjectForm] = useState(initialProjectState);
 
   useEffect(() => {
-    fetchInquiries();
-  }, []);
-
-  async function fetchInquiries() {
-    const { data } = await supabase.from('contact_inquiries').select('*').order('created_at', { ascending: false });
-    if (data) setInquiries(data);
-  }
+    if (activeTab === 'inquiries') {
+      fetchInquiries();
+    }
+  }, [activeTab]);
 
   const handleImageUpload = async (field: string, e: React.ChangeEvent<HTMLInputElement>, isProject = false) => {
     const file = e.target.files?.[0];
@@ -134,6 +131,32 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
       }
     }
   };
+
+  // Inquiries Logic
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
+
+  const fetchInquiries = async () => {
+    setLoadingInquiries(true);
+    const { data, error } = await supabase
+      .from('contact_inquiries')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) setInquiries(data);
+    setLoadingInquiries(false);
+  };
+
+  const handleDeleteInquiry = async (id: any) => {
+    if (!confirm(lang === 'de' ? 'Anfrage löschen?' : 'Delete inquiry?')) return;
+    const { error } = await supabase.from('contact_inquiries').delete().eq('id', id);
+    if (!error) fetchInquiries();
+  };
+
+  useEffect(() => {
+    if (activeTab === 'inquiries') {
+      fetchInquiries();
+    }
+  }, [activeTab]);
 
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,11 +306,6 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
     }
   };
 
-  const handleDeleteInquiry = async (id: string) => {
-    await supabase.from('contact_inquiries').delete().eq('id', id);
-    fetchInquiries();
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onClose();
@@ -300,16 +318,26 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
     >
-      <div className="bg-surface-card border border-surface-border w-full max-w-6xl h-full max-h-[850px] flex flex-col md:flex-row overflow-hidden shadow-2xl">
+      <div className="bg-surface-card border border-surface-border w-full max-w-6xl h-full max-h-[850px] flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
         
+        {/* Mobile Header (Hidden on Laptop) */}
+        <div className="md:hidden flex items-center justify-between p-4 bg-surface-dark border-b border-surface-border">
+          <h2 className="heading-dynamic text-primary text-xl">C-PANEL</h2>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white p-2">
+            <X size={24} />
+          </button>
+        </div>
+
         {/* Sidebar */}
-        <div className="w-full md:w-64 bg-surface-dark border-r border-surface-border p-6 flex flex-col gap-8">
-          <div className="flex items-center justify-between">
-            <h2 className="heading-dynamic text-primary text-2xl">C-PANEL</h2>
-            <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-white"><X /></button>
+        <div className="w-full md:w-64 bg-surface-dark border-r border-surface-border flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto scrollbar-none">
+          <div className="hidden md:flex p-6 flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <h2 className="heading-dynamic text-primary text-2xl">C-PANEL</h2>
+              <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-white"><X /></button>
+            </div>
           </div>
           
-          <nav className="flex flex-col gap-2">
+          <nav className="flex flex-row md:flex-col gap-2 p-4 md:p-6 min-w-max md:min-w-0">
             {[
               { id: 'settings', label: lang === 'de' ? 'Webseiten-Info' : 'Site Info', icon: <LayoutDashboard size={18} /> },
               { id: 'projects', label: lang === 'de' ? 'Projekte' : 'Projects', icon: <Briefcase size={18} /> },
@@ -318,7 +346,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id as any); cancelEdit(); }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-xs tracking-widest transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-[10px] md:text-xs tracking-widest transition-all whitespace-nowrap ${
                   activeTab === tab.id ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -328,132 +356,205 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
             
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-xs tracking-widest text-red-500 hover:bg-red-500/10 transition-all mt-4 border border-red-500/20"
+              className="flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-[10px] md:text-xs tracking-widest text-red-500 hover:bg-red-500/10 transition-all md:mt-4 border border-red-500/20 whitespace-nowrap"
             >
               <LogOut size={18} /> {lang === 'de' ? 'Abmelden' : 'Logout'}
             </button>
           </nav>
 
-          <button onClick={onClose} className="mt-auto flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-bold uppercase tracking-widest">
-            <X size={16} /> {lang === 'de' ? 'Schließen' : 'Close'}
-          </button>
+          <div className="hidden md:flex mt-auto p-6">
+            <button onClick={onClose} className="flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-bold uppercase tracking-widest">
+              <X size={16} /> {lang === 'de' ? 'Schließen' : 'Close'}
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-12">
+        <div className="flex-1 overflow-y-auto p-6 md:p-12">
           
           {activeTab === 'settings' && (
-            <div className="space-y-12">
+            <div className="space-y-10 md:space-y-12">
               <div className="space-y-2">
-                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Webseiten-Einstellungen' : 'Website Settings'}</h3>
-                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Verwalten Sie die globalen Inhalte und Bilder Ihrer Webseite.' : 'Manage global content and images of your website.'}</p>
+                <h3 className="heading-dynamic text-2xl md:text-4xl">{lang === 'de' ? 'Webseiten-Einstellungen' : 'Website Settings'}</h3>
+                <p className="text-zinc-500 text-[11px] md:text-sm">{lang === 'de' ? 'Verwalten Sie die globalen Inhalte und Bilder Ihrer Webseite.' : 'Manage global content and images of your website.'}</p>
               </div>
 
-              <form onSubmit={handleUpdateSettings} className="space-y-12">
+              <form onSubmit={handleUpdateSettings} className="space-y-10 md:space-y-12">
                 {/* Content Section */}
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Firmenname' : 'Company Name'}</label>
+                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Firmenname' : 'Company Name'}</label>
                     <input 
                       type="text" value={settingsForm.name || ''} 
                       onChange={e => setSettingsForm({...settingsForm, name: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
                     />
                   </div>
                   <div className="hidden md:block" />
                   
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (DE)' : 'Slogan (DE)'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (DE)' : 'Slogan (DE)'}</label>
                     <input 
                       type="text" value={settingsForm.slogan_de || settingsForm.slogan || ''} 
                       onChange={e => setSettingsForm({...settingsForm, slogan_de: e.target.value, slogan: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (EN)' : 'Slogan (EN)'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (EN)' : 'Slogan (EN)'}</label>
                     <input 
                       type="text" value={settingsForm.slogan_en || ''} 
                       onChange={e => setSettingsForm({...settingsForm, slogan_en: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
                     />
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (DE)' : 'Description (DE)'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (DE)' : 'Description (DE)'}</label>
                     <textarea 
                       rows={3} value={settingsForm.description_de || settingsForm.description || ''} 
                       onChange={e => setSettingsForm({...settingsForm, description_de: e.target.value, description: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none text-sm" 
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (EN)' : 'Description (EN)'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (EN)' : 'Description (EN)'}</label>
                     <textarea 
                       rows={3} value={settingsForm.description_en || ''} 
                       onChange={e => setSettingsForm({...settingsForm, description_en: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none text-sm" 
                     />
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Telefon' : 'Phone'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Telefon' : 'Phone'}</label>
                     <input 
                       type="text" value={settingsForm.phone || ''} 
                       onChange={e => setSettingsForm({...settingsForm, phone: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Email' : 'Email'}</label>
+                  <div className="space-y-3 md:space-y-4">
+                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Email' : 'Email'}</label>
                     <input 
                       type="email" value={settingsForm.email || ''} 
                       onChange={e => setSettingsForm({...settingsForm, email: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none transition-colors" 
+                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
                     />
                   </div>
                 </div>
 
-                <div className="space-y-8 bg-black/40 p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Jahre Erfahrung' : 'Years Experience'}</label>
+                {/* Location Section */}
+                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Standort & Adresse' : 'Location & Address'}</h4>
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Vollständige Adresse' : 'Full Address'}</label>
+                      <input 
+                        type="text" value={settingsForm.address || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, address: e.target.value})}
+                        placeholder="Musterstraße 1, 83022 Rosenheim"
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                    </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Google Maps Embed URL' : 'Google Maps Embed URL'}</label>
+                      <input 
+                        type="text" value={settingsForm.google_maps_url || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, google_maps_url: e.target.value})}
+                        placeholder="https://www.google.com/maps/embed?..."
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                      <p className="text-[9px] text-zinc-600 italic">
+                        {lang === 'de' ? 'Gehen Sie auf Google Maps -> Teilen -> Karte einbetten -> src-Link extrahieren' : 'Go to Google Maps -> Share -> Embed map -> extract the src link'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Media Section */}
+                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Social Media Links' : 'Social Media Links'}</h4>
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">Facebook URL</label>
+                      <input 
+                        type="text" value={settingsForm.facebook_url || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, facebook_url: e.target.value})}
+                        placeholder="https://facebook.com/..."
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                    </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">Instagram URL</label>
+                      <input 
+                        type="text" value={settingsForm.instagram_url || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, instagram_url: e.target.value})}
+                        placeholder="https://instagram.com/..."
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                    </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">WhatsApp (Number only)</label>
+                      <input 
+                        type="text" value={settingsForm.whatsapp_number || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, whatsapp_number: e.target.value})}
+                        placeholder="+49 123 456789"
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                    </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">LinkedIn URL</label>
+                      <input 
+                        type="text" value={settingsForm.linkedin_url || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, linkedin_url: e.target.value})}
+                        placeholder="https://linkedin.com/..."
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Jahre Erfahrung' : 'Years Experience'}</label>
                       <input 
                         type="text" value={settingsForm.stats_years || ''} 
                         onChange={e => setSettingsForm({...settingsForm, stats_years: e.target.value})}
                         placeholder="15+"
-                        className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none text-sm" 
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm" 
                       />
                     </div>
-                    <div className="space-y-4">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Abgeschlossene Projekte' : 'Completed Projects'}</label>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Abgeschlossene Projekte' : 'Completed Projects'}</label>
                       <input 
                         type="text" value={settingsForm.stats_projects || ''} 
                         onChange={e => setSettingsForm({...settingsForm, stats_projects: e.target.value})}
                         placeholder="500+"
-                        className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none text-sm" 
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm" 
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Image Section */}
-                <div className="space-y-8 bg-black/40 p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Seiten-Bilder' : 'Site Images'}</h4>
-                  <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Seiten-Bilder' : 'Site Images'}</h4>
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     {[
                       { id: 'hero_image_url', label: lang === 'de' ? 'Hero Hintergrund' : 'Hero Background' },
                       { id: 'about_image_url', label: lang === 'de' ? 'Über Uns Bild' : 'About Us Image' },
                       { id: 'cta_image_url', label: lang === 'de' ? 'CTA Hintergrund' : 'CTA Background' },
                       { id: 'contact_image_url', label: lang === 'de' ? 'Kontakt Bild' : 'Contact Image' },
                     ].map(img => (
-                      <div key={img.id} className="space-y-4">
+                      <div key={img.id} className="space-y-3 md:space-y-4">
                         <div className="flex items-center justify-between">
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{img.label}</label>
-                          <label className="cursor-pointer text-[10px] text-primary hover:underline font-bold flex items-center gap-1">
+                          <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{img.label}</label>
+                          <label className="cursor-pointer text-[9px] md:text-[10px] text-primary hover:underline font-bold flex items-center gap-1">
                             {isUploading === img.id ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />} 
-                            {isUploading === img.id ? (lang === 'de' ? 'Hochladen...' : 'Uploading...') : (lang === 'de' ? 'Hochladen' : 'Upload')}
+                            {isUploading === img.id ? (lang === 'de' ? '...' : '...') : (lang === 'de' ? 'Upload' : 'Upload')}
                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(img.id, e)} disabled={!!isUploading} />
                           </label>
                         </div>
@@ -461,7 +562,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                           type="text" value={settingsForm[img.id] || ''} 
                           onChange={e => setSettingsForm({...settingsForm, [img.id]: e.target.value})}
                           placeholder="https://..."
-                          className="w-full bg-surface-dark border border-surface-border p-3 rounded-sm focus:border-primary outline-none text-xs" 
+                          className="w-full bg-surface-dark border border-surface-border p-2.5 md:p-3 rounded-sm focus:border-primary outline-none text-[11px] md:text-xs" 
                         />
                         {settingsForm[img.id] && (
                           <div className="aspect-video w-full bg-zinc-900 rounded-sm overflow-hidden border border-surface-border">
@@ -522,12 +623,37 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_years text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_projects text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS facebook_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS instagram_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS linkedin_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS google_maps_url text;
 
--- 2. Fix potential "NOT NULL" constraint errors (makes slogan/name optional)
+-- 2. Create inquiries table if it doesn't exist
+CREATE TABLE IF NOT EXISTS contact_inquiries (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at timestamptz DEFAULT now(),
+  name text,
+  email text,
+  subject text,
+  message text
+);
+
+-- 3. Fix potential "NOT NULL" constraint errors (makes slogan/name optional)
 ALTER TABLE site_settings ALTER COLUMN slogan DROP NOT NULL;
 ALTER TABLE site_settings ALTER COLUMN name DROP NOT NULL;
 
--- 3. Ensure an initial settings record exists for ID 1
+-- 4. Enable RLS and public access for inquiries
+ALTER TABLE contact_inquiries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public insert" ON contact_inquiries;
+CREATE POLICY "Allow public insert" ON contact_inquiries FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow admin select" ON contact_inquiries;
+CREATE POLICY "Allow admin select" ON contact_inquiries FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow admin delete" ON contact_inquiries;
+CREATE POLICY "Allow admin delete" ON contact_inquiries FOR DELETE USING (true);
+
+-- 5. Ensure an initial settings record exists for ID 1
 -- This uses placeholders for any other required columns you might have
 INSERT INTO site_settings (id, name, slogan) 
 VALUES (1, 'FJ Bauservice', 'Ihr Partner für Bauvorhaben') 

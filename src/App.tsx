@@ -142,9 +142,9 @@ export default function App() {
       case 'about':
         return (
           <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
-            <h1 className="heading-dynamic text-8xl">{t.nav.about}</h1>
-            <div className="grid lg:grid-cols-2 gap-16">
-              <div className="space-y-8 text-zinc-400 text-lg">
+            <h1 className="heading-dynamic text-5xl md:text-8xl tracking-tight leading-none">{t.nav.about}</h1>
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
+              <div className="space-y-6 md:space-y-8 text-zinc-400 text-base md:text-lg">
                 <p>
                   {siteSettings?.name || 'FJ Bauservice'} 
                   {language === 'de' 
@@ -158,7 +158,7 @@ export default function App() {
                     : ' we execute projects with the highest precision and reliability. Our team stands for quality, punctuality and clean execution on every job.'}
                 </p>
               </div>
-              <div className="aspect-video bg-surface-card border border-surface-border overflow-hidden">
+              <div className="aspect-[16/10] bg-surface-card border border-surface-border overflow-hidden">
                 <img 
                   src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
                   alt="Team" 
@@ -167,21 +167,25 @@ export default function App() {
                 />
               </div>
             </div>
-            <div className="pt-12">
-                <button onClick={() => setCurrentPage('contact')} className="button-primary">
+            <div className="pt-8">
+                <button onClick={() => setCurrentPage('contact')} className="button-primary w-full md:w-auto justify-center">
                   {t.nav.offer}
                 </button>
             </div>
           </section>
         );
       case 'services':
-        return <Services lang={language} setCurrentPage={setCurrentPage} />;
+        return (
+          <div className="pt-10">
+            <Services lang={language} setCurrentPage={setCurrentPage} />
+          </div>
+        );
       case 'projects':
         return (
           <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
             <div className="space-y-4">
-              <h1 className="heading-dynamic text-8xl italic">{t.nav.projects}</h1>
-              <p className="text-zinc-500 max-w-xl">
+              <h1 className="heading-dynamic text-5xl md:text-8xl italic leading-none">{t.nav.projects}</h1>
+              <p className="text-zinc-500 max-w-xl text-sm md:text-base">
                 {language === 'de' ? 'Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte.' : 'An insight into our successfully completed demolition and dismantling projects.'}
               </p>
             </div>

@@ -20,13 +20,15 @@ export default function Footer({ settings, lang, setCurrentPage }: { settings: a
           </p>
           <div className="flex gap-4">
             {[
-              { Icon: Facebook, key: 'facebook' },
-              { Icon: Instagram, key: 'instagram' },
-              { Icon: Linkedin, key: 'linkedin' }
-            ].map(({ Icon, key }) => (
+              { Icon: Facebook, url: settings?.facebook_url },
+              { Icon: Instagram, url: settings?.instagram_url },
+              { Icon: Linkedin, url: settings?.linkedin_url }
+            ].filter(social => social.url).map(({ Icon, url }, index) => (
               <a 
-                key={key} 
-                href={settings?.[`${key}_url`] || '#'} 
+                key={index} 
+                href={url} 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full border border-surface-border flex items-center justify-center text-white hover:bg-primary hover:text-black transition-all"
               >
                 <Icon size={18} />
@@ -79,8 +81,17 @@ export default function Footer({ settings, lang, setCurrentPage }: { settings: a
       <div className="max-w-7xl mx-auto pt-10 border-t border-surface-border flex flex-col md:flex-row justify-between items-center gap-6">
         <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 {settings?.name || 'FJ BAUSERVICE'}.</p>
         <div className="flex items-center gap-8">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">Rosenheim, DE</p>
-          <a href={`https://wa.me/${(settings?.phone || '0159 06142923').replace(/\s+/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary text-[10px] font-black uppercase tracking-[0.2em]">WHATSAPP: {settings?.phone || '0159 06142923'}</a>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">{settings?.address || 'Rosenheim, DE'}</p>
+          {(settings?.whatsapp_number || settings?.phone) && (
+            <a 
+              href={`https://wa.me/${(settings?.whatsapp_number || settings?.phone || '0159 06142923').replace(/\s+/g, '').replace('+', '')}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-primary text-[10px] font-black uppercase tracking-[0.2em]"
+            >
+              WHATSAPP: {settings?.whatsapp_number || settings?.phone || '0159 06142923'}
+            </a>
+          )}
         </div>
       </div>
 

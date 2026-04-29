@@ -100,54 +100,68 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-20 left-0 w-full bg-surface-dark border-b border-surface-border p-6 md:hidden flex flex-col gap-6"
-          >
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => {
-                  setCurrentPage(link.id);
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`text-xl font-bold uppercase ${
-                  currentPage === link.id ? 'text-primary' : 'text-white'
-                }`}
-              >
-                {link.label}
-              </button>
-            ))}
-            <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border self-start mb-4">
-              <button 
-                onClick={() => setLang('en')}
-                className={`flex-1 px-4 py-2 text-sm font-bold rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500'}`}
-              >
-                ENGLISH
-              </button>
-              <button 
-                onClick={() => setLang('de')}
-                className={`flex-1 px-4 py-2 text-sm font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500'}`}
-              >
-                GERMAN
-              </button>
-            </div>
-            <button 
-              onClick={() => {
-                setCurrentPage('contact');
-                setIsMobileMenuOpen(false);
-              }}
-              className="button-primary w-full justify-center"
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 w-[80%] max-w-sm h-full bg-surface-dark border-l border-surface-border z-[55] md:hidden flex flex-col p-8 pt-24 gap-8"
             >
-              {t.nav.offer} <ArrowRight size={20} />
-            </button>
-          </motion.div>
+              <div className="flex flex-col gap-4">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.id}
+                    onClick={() => {
+                      setCurrentPage(link.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`text-2xl font-black uppercase tracking-tight text-left transition-colors ${
+                      currentPage === link.id ? 'text-primary' : 'text-white hover:text-primary'
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-auto space-y-6">
+                <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border">
+                  <button 
+                    onClick={() => setLang('en')}
+                    className={`flex-1 px-4 py-2 text-xs font-black rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500'}`}
+                  >
+                    ENGLISH
+                  </button>
+                  <button 
+                    onClick={() => setLang('de')}
+                    className={`flex-1 px-4 py-2 text-xs font-black rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500'}`}
+                  >
+                    GERMAN
+                  </button>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setCurrentPage('contact');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="button-primary w-full justify-center py-4"
+                >
+                  {t.nav.offer} <ArrowRight size={20} />
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>

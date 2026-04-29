@@ -18,9 +18,9 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
 
   return (
     <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto">
-      <div className="grid lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
         {/* Main Hero Card */}
-        <div className="lg:col-span-8 bg-surface-card border border-surface-border p-10 relative overflow-hidden group min-h-[500px] flex flex-col justify-end">
+        <div className="md:col-span-2 lg:col-span-8 bg-surface-card border border-surface-border p-6 md:p-10 relative overflow-hidden group min-h-[400px] md:min-h-[500px] flex flex-col justify-end">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -33,21 +33,21 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
           </div>
 
           <div className="absolute top-0 right-0 p-4">
-            <span className="bg-primary/10 text-primary border border-primary/20 px-4 py-1 text-xs font-bold uppercase tracking-wider">
+            <span className="bg-primary/10 text-primary border border-primary/20 px-4 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider">
               {t.hero.badge}
             </span>
           </div>
           
           {/* Background Decorative Text */}
           <div className="absolute top-10 left-10 opacity-[0.03] select-none pointer-events-none">
-            <h2 className="text-[120px] md:text-[200px] leading-none font-black uppercase">{t.hero.trust}</h2>
+            <h2 className="text-[100px] md:text-[200px] leading-none font-black uppercase">{t.hero.trust}</h2>
           </div>
 
-          <div className="relative z-10 space-y-8">
+          <div className="relative z-10 space-y-6 md:space-y-8">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="heading-dynamic text-5xl md:text-8xl max-w-2xl leading-[1.1] md:leading-[0.9]"
+              className="heading-dynamic text-4xl md:text-6xl lg:text-8xl max-w-2xl leading-[1.1] md:leading-[0.9]"
             >
               {currentSlogan}
             </motion.h1>
@@ -56,7 +56,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-zinc-400 text-lg max-w-md"
+              className="text-zinc-400 text-base md:text-lg max-w-md"
             >
               {currentDesc}
             </motion.p>
@@ -68,7 +68,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
             >
               <button 
                 onClick={() => setCurrentPage('contact')}
-                className="button-primary group/btn"
+                className="button-primary group/btn w-full md:w-auto justify-center"
               >
                 {t.nav.offer} 
                 <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" size={20} />
@@ -78,23 +78,23 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
         </div>
 
         {/* Stats Column */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="flex-1 bg-surface-card border border-surface-border p-8 flex flex-col justify-center gap-2">
-            <span className="text-primary text-5xl font-black font-display tracking-tighter">{settings?.stats_years || '15+'}</span>
-            <span className="text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.experience}</span>
+        <div className="grid md:grid-cols-2 lg:grid-cols-1 lg:col-span-4 gap-6">
+          <div className="bg-surface-card border border-surface-border p-6 md:p-8 flex flex-col justify-center gap-2">
+            <span className="text-primary text-4xl md:text-5xl font-black font-display tracking-tighter">{settings?.stats_years || '15+'}</span>
+            <span className="text-[10px] md:text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.experience}</span>
           </div>
           
-          <div className="flex-1 bg-surface-card border border-surface-border p-8 flex flex-col justify-center gap-2">
-            <span className="text-primary text-5xl font-black font-display tracking-tighter">{settings?.stats_projects || '500+'}</span>
-            <span className="text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.projects}</span>
+          <div className="bg-surface-card border border-surface-border p-6 md:p-8 flex flex-col justify-center gap-2">
+            <span className="text-primary text-4xl md:text-5xl font-black font-display tracking-tighter">{settings?.stats_projects || '500+'}</span>
+            <span className="text-[10px] md:text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.projects}</span>
           </div>
 
           <div 
             onClick={() => setCurrentPage('contact')}
-            className="flex-1 bg-primary p-8 flex items-center justify-between group cursor-pointer"
+            className="md:col-span-2 lg:col-span-1 bg-primary p-6 md:p-8 flex items-center justify-between group cursor-pointer"
           >
             <div className="space-y-1">
-              <span className="text-black text-2xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>
+              <span className="text-black text-xl md:text-2xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>
             </div>
             <ArrowRight className="text-black group-hover:translate-x-2 transition-transform" size={32} />
           </div>
