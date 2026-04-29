@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Plus, Trash2, LayoutDashboard, Briefcase, Mail, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Save, Plus, Trash2, LayoutDashboard, Briefcase, Mail, Loader2, Image as ImageIcon, LogOut, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AdminPanelProps {
@@ -18,6 +18,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<any>(null);
   const [imageHistory, setImageHistory] = useState<string[]>([]);
+  const [showDatabaseHelp, setShowDatabaseHelp] = useState(false);
   
   // Settings Form State
   const [settingsForm, setSettingsForm] = useState(settings || {});
@@ -146,7 +147,17 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
       .upsert({ id: 1, ...updateData }, { onConflict: 'id' });
     
     if (error) {
-      alert((lang === 'de' ? 'Fehler beim Speichern: ' : 'Error saving: ') + error.message);
+      console.error("Settings save error:", error);
+      if (error.message.includes('column') || error.code === 'PGRST204') {
+        const schemaError = error.code === 'PGRST204' || error.message.includes('cache');
+        alert((lang === 'de' ? 'DATENBANK-FEHLER: ' : 'DATABASE ERROR: ') + 
+          (schemaError 
+            ? (lang === 'de' ? 'Schema-Cache veraltet. Bitte klicken Sie in den Supabase-Einstellungen auf "Reload Schema".' : 'Schema cache is stale. Please click "Reload Schema" in your Supabase API Settings.')
+            : (lang === 'de' ? 'Spalten fehlen in der Tabelle "site_settings".' : 'Columns missing in "site_settings" table.')));
+        setShowDatabaseHelp(true);
+      } else {
+        alert((lang === 'de' ? 'Fehler beim Speichern: ' : 'Error saving: ') + error.message);
+      }
     } else {
       alert(lang === 'de' ? 'Einstellungen erfolgreich gespeichert!' : 'Settings saved successfully!');
       refreshData();
@@ -249,15 +260,37 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
     )
   );
 
-  const handleDeleteProject = async (id: string) => {
+  const handleDeleteProject = async (project: any) => {
     if (!confirm(lang === 'de' ? 'Projekt wirklich löschen?' : 'Really delete this project?')) return;
-    await supabase.from('projects').delete().eq('id', id);
-    refreshData();
+    
+    // Try to delete from storage if it's our own image
+    if (project.image_url && project.image_url.includes('supabase.co')) {
+      const pathMatches = project.image_url.split('/public/images/');
+      if (pathMatches.length > 1) {
+        try {
+          await supabase.storage.from('images').remove([pathMatches[1]]);
+        } catch (e) {
+          console.warn("Storage deletion failed, continuing with record deletion:", e);
+        }
+      }
+    }
+
+    const { error } = await supabase.from('projects').delete().eq('id', project.id);
+    if (error) {
+      alert("Error deleting: " + error.message);
+    } else {
+      refreshData();
+    }
   };
 
   const handleDeleteInquiry = async (id: string) => {
     await supabase.from('contact_inquiries').delete().eq('id', id);
     fetchInquiries();
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onClose();
   };
 
   return (
@@ -292,6 +325,13 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                 {tab.icon} {tab.label}
               </button>
             ))}
+            
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-xs tracking-widest text-red-500 hover:bg-red-500/10 transition-all mt-4 border border-red-500/20"
+            >
+              <LogOut size={18} /> {lang === 'de' ? 'Abmelden' : 'Logout'}
+            </button>
           </nav>
 
           <button onClick={onClose} className="mt-auto flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-bold uppercase tracking-widest">
@@ -374,6 +414,30 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   </div>
                 </div>
 
+                <div className="space-y-8 bg-black/40 p-8 border border-surface-border rounded-sm">
+                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Jahre Erfahrung' : 'Years Experience'}</label>
+                      <input 
+                        type="text" value={settingsForm.stats_years || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, stats_years: e.target.value})}
+                        placeholder="15+"
+                        className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none text-sm" 
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Abgeschlossene Projekte' : 'Completed Projects'}</label>
+                      <input 
+                        type="text" value={settingsForm.stats_projects || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, stats_projects: e.target.value})}
+                        placeholder="500+"
+                        className="w-full bg-surface-dark border border-surface-border p-4 rounded-sm focus:border-primary outline-none text-sm" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Image Section */}
                 <div className="space-y-8 bg-black/40 p-8 border border-surface-border rounded-sm">
                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Seiten-Bilder' : 'Site Images'}</h4>
@@ -417,6 +481,68 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
                   {lang === 'de' ? 'Einstellungen speichern' : 'Save Settings'}
                 </button>
+
+                {/* Optional SQL Fix Help */}
+                <div className="mt-12 border-t border-surface-border pt-8">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowDatabaseHelp(!showDatabaseHelp)}
+                    className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-primary transition-colors flex items-center gap-2"
+                  >
+                    <LayoutDashboard size={14} />
+                    {showDatabaseHelp 
+                      ? (lang === 'de' ? 'Setup-Passwort verbergen' : 'Hide Database Setup') 
+                      : (lang === 'de' ? 'Troubleshooting: Datenbank-Setup anzeigen' : 'Troubleshooting: Show Database Setup')}
+                  </button>
+
+                  <AnimatePresence>
+                    {showDatabaseHelp && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-sm space-y-4">
+                          <p className="text-[10px] text-zinc-500 leading-relaxed font-bold border-b border-primary/20 pb-2 mb-2">
+                            {lang === 'de' 
+                              ? 'WICHTIG: Nach dem Ausführen des SQLs müssen Sie in Supabase unter "Settings -> API" auf "Reload Schema" klicken!'
+                              : 'IMPORTANT: After running this SQL, you MUST click "Reload Schema" in Supabase under "Settings -> API"!'}
+                          </p>
+                          <p className="text-[10px] text-zinc-500 leading-relaxed italic">
+                            {lang === 'de' 
+                              ? 'Kopieren Sie diesen Code und führen Sie ihn im Supabase SQL Editor aus:'
+                              : 'Copy this code and run it in your Supabase SQL Editor:'}
+                          </p>
+                          <pre className="text-[9px] bg-zinc-950 p-4 overflow-x-auto text-zinc-300 font-mono border border-zinc-900 leading-tight select-all">
+{`-- 1. Ensure all required columns exist
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_years text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_projects text;
+
+-- 2. Fix potential "NOT NULL" constraint errors (makes slogan/name optional)
+ALTER TABLE site_settings ALTER COLUMN slogan DROP NOT NULL;
+ALTER TABLE site_settings ALTER COLUMN name DROP NOT NULL;
+
+-- 3. Ensure an initial settings record exists for ID 1
+-- This uses placeholders for any other required columns you might have
+INSERT INTO site_settings (id, name, slogan) 
+VALUES (1, 'FJ Bauservice', 'Ihr Partner für Bauvorhaben') 
+ON CONFLICT (id) DO NOTHING;
+
+-- 4. Enable RLS and public access if not already done
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public access" ON site_settings;
+CREATE POLICY "Allow public access" ON site_settings FOR ALL USING (true);`}
+                          </pre>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </form>
             </div>
           )}
@@ -426,57 +552,6 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
               <div className="space-y-2">
                 <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Projekt-Verwaltung' : 'Project Management'}</h3>
                 <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Neue Projekte hinzufügen oder bestehende bearbeiten.' : 'Add new projects or edit existing ones.'}</p>
-                
-                {/* Detailed Setup Guide */}
-                <div className="p-6 bg-primary/5 border border-primary/20 rounded-sm space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black uppercase text-xs tracking-widest">
-                    <ImageIcon size={16} />
-                    Supabase Storage Setup Guide
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">1. Create Bucket</h4>
-                      <p className="text-[10px] text-zinc-500 leading-relaxed">
-                        Go to <b>Storage</b> &rarr; <b>New Bucket</b>. Call it <b><code className="text-primary">images</code></b>. 
-                        Make sure to toggle <b>Public</b> to ON.
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">2. Add Policies</h4>
-                      <p className="text-[10px] text-zinc-500 leading-relaxed">
-                        In your bucket settings, go to <b>Policies</b>. Click <b>New Policy</b> &rarr; <b>For full customization</b>. 
-                        Add one for <b>INSERT</b> and one for <b>SELECT</b>. Allow for both "anon" and "authenticated" roles.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* SQL Fix Box */}
-                  <div className="mt-4 pt-4 border-t border-primary/10">
-                    <h4 className="text-[10px] font-black text-primary uppercase tracking-tighter mb-2">FIX DATABASE PERMISSIONS (RUN IN SUPABASE SQL EDITOR):</h4>
-                    <pre className="text-[9px] bg-zinc-950 p-3 overflow-x-auto text-zinc-300 font-mono border border-zinc-900 leading-tight select-all">
-{`-- 1. Ensure all columns exist
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS title_en text;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS title_de text;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS category_en text;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS category_de text;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS description_en text;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS description_de text;
-
--- 2. Enable RLS and add public policies
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public insert" ON projects;
-DROP POLICY IF EXISTS "Allow public update" ON projects;
-DROP POLICY IF EXISTS "Allow public select" ON projects;
-DROP POLICY IF EXISTS "Allow public delete" ON projects;
-
-CREATE POLICY "Allow public select" ON projects FOR SELECT USING (true);
-CREATE POLICY "Allow public insert" ON projects FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update" ON projects FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete" ON projects FOR DELETE USING (true);`}
-                    </pre>
-                    <p className="text-[9px] text-zinc-500 mt-2 italic">Copy the code above, run it in Supabase SQL Editor, then try saving again.</p>
-                  </div>
-                </div>
               </div>
 
               {/* Project Form */}
@@ -585,12 +660,14 @@ CREATE POLICY "Allow public delete" ON projects FOR DELETE USING (true);`}
                       <button 
                         onClick={() => startEditProject(project)}
                         className="text-zinc-600 hover:text-primary transition-colors p-2"
+                        title={lang === 'de' ? 'Bearbeiten' : 'Edit'}
                       >
-                        <ImageIcon size={18} />
+                        <Pencil size={18} />
                       </button>
                       <button 
-                        onClick={() => handleDeleteProject(project.id)}
+                        onClick={() => handleDeleteProject(project)}
                         className="text-zinc-600 hover:text-red-500 transition-colors p-2"
+                        title={lang === 'de' ? 'Löschen' : 'Delete'}
                       >
                         <Trash2 size={18} />
                       </button>

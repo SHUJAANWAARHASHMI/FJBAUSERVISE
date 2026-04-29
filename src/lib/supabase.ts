@@ -12,4 +12,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase credentials missing. Using placeholder values.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});

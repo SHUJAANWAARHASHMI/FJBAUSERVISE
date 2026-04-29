@@ -80,12 +80,12 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
         {/* Stats Column */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="flex-1 bg-surface-card border border-surface-border p-8 flex flex-col justify-center gap-2">
-            <span className="text-primary text-5xl font-black font-display tracking-tighter">15+</span>
+            <span className="text-primary text-5xl font-black font-display tracking-tighter">{settings?.stats_years || '15+'}</span>
             <span className="text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.experience}</span>
           </div>
           
           <div className="flex-1 bg-surface-card border border-surface-border p-8 flex flex-col justify-center gap-2">
-            <span className="text-primary text-5xl font-black font-display tracking-tighter">500+</span>
+            <span className="text-primary text-5xl font-black font-display tracking-tighter">{settings?.stats_projects || '500+'}</span>
             <span className="text-sm font-bold uppercase tracking-widest text-zinc-500">{t.hero.stats.projects}</span>
           </div>
 

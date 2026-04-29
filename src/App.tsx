@@ -19,6 +19,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ProjectGallery from './components/ProjectGallery';
 import AdminPanel from './components/AdminPanel';
+import Login from './components/Login';
 import { supabase } from './lib/supabase';
 
 import { translations } from './lib/translations';
@@ -38,6 +39,8 @@ interface SiteSettings {
   about_image_url?: string;
   cta_image_url?: string;
   contact_image_url?: string;
+  stats_years?: string;
+  stats_projects?: string;
 }
 
 interface Project {
@@ -63,8 +66,23 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [session, setSession] = useState<any>(null);
 
   const t = translations[language];
+
+  // Handle Authentication
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Persist language
   useEffect(() => {
@@ -76,11 +94,13 @@ export default function App() {
   const fetchData = async () => {
     try {
       const [settingsRes, projectsRes] = await Promise.all([
-        supabase.from('site_settings').select('*').single(),
+        supabase.from('site_settings').select('*').limit(1),
         supabase.from('projects').select('*').order('created_at', { ascending: false })
       ]);
 
-      if (settingsRes.data) setSiteSettings(settingsRes.data);
+      if (settingsRes.data && settingsRes.data.length > 0) {
+        setSiteSettings(settingsRes.data[0]);
+      }
       if (projectsRes.data) setProjects(projectsRes.data);
     } catch (error) {
       console.error('Error fetching data from Supabase:', error);
@@ -178,10 +198,10 @@ export default function App() {
               <div>
                 <h2 className="text-xl font-bold text-white uppercase">{t.footer.impressum}</h2>
                 <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap">
-                  {settings?.name || 'FJ Bauservice'}{'\n'}
-                  {settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
+                  {siteSettings?.name || 'FJ Bauservice'}{'\n'}
+                  {siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
                   {language === 'de' ? 'Vertreten durch' : 'Represented by'}: Amjad Ali{'\n'}
-                  {language === 'de' ? 'Kontakt' : 'Contact'}: {settings?.email || 'amjad.ali@fj-bauservice.com'}
+                  {language === 'de' ? 'Kontakt' : 'Contact'}: {siteSettings?.email || 'amjad.ali@fj-bauservice.com'}
                 </div>
               </div>
               <div>
@@ -214,7 +234,13 @@ export default function App() {
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 
         settings={siteSettings} 
-        onAdminTrigger={() => setIsAdminPanelOpen(true)}
+        onAdminTrigger={() => {
+          if (session) {
+            setIsAdminPanelOpen(true);
+          } else {
+            setIsLoginOpen(true);
+          }
+        }}
         lang={language}
         setLang={setLanguage}
       />
@@ -236,9 +262,28 @@ export default function App() {
       <Footer settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
 
       <AnimatePresence>
-        {isAdminPanelOpen && (
+        {isLoginOpen && !session && (
+          <Login 
+            onClose={() => setIsLoginOpen(false)}
+            onLoginStatus={(status) => {
+              if (status) {
+                setIsLoginOpen(false);
+                setIsAdminPanelOpen(true);
+              }
+            }}
+            lang={language}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAdminPanelOpen && session && (
           <AdminPanel 
-            onClose={() => setIsAdminPanelOpen(false)}
+            onClose={async () => {
+              await supabase.auth.signOut();
+              setSession(null);
+              setIsAdminPanelOpen(false);
+            }}
             settings={siteSettings}
             projects={projects}
             refreshData={fetchData}
