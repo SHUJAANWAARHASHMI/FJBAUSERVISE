@@ -16,7 +16,13 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
     <section className="py-24 px-6 max-w-7xl mx-auto overflow-hidden">
       <div className="grid lg:grid-cols-2 gap-20 items-center">
         <div className="space-y-12">
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
+          >
             <h2 className="heading-dynamic text-5xl md:text-7xl leading-tight">
               {t.whyUs.title.split(' ')[0]}<br />
               <span className="text-primary">{t.whyUs.title.split(' ').slice(1).join(' ')}</span>
@@ -24,16 +30,20 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
             <p className="text-zinc-400 text-lg max-w-xl">
               {t.whyUs.subtitle}
             </p>
-          </div>
+          </motion.div>
 
           <div className="space-y-8">
             {points.map((point, idx) => (
               <motion.div 
                 key={idx}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ 
+                  delay: 0.2 + (idx * 0.15),
+                  duration: 0.8,
+                  ease: [0.16, 1, 0.3, 1]
+                }}
                 className="flex gap-6"
               >
                 <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-primary/20">
@@ -49,7 +59,13 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
         </div>
 
         {/* Bento Grid Visual */}
-        <div className="grid grid-cols-2 gap-4 h-[400px] md:h-[600px]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-2 gap-4 h-[400px] md:h-[600px]"
+        >
           <div className="bg-surface-card border border-surface-border relative overflow-hidden group">
             <img 
               src="https://picsum.photos/seed/build1/600/800?grayscale" 
@@ -71,7 +87,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
                <span className="text-black text-xl md:text-4xl font-black font-display leading-tight uppercase">100% {lang === 'de' ? 'Nachhaltigkeit' : 'Sustainability'}</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -76,18 +76,28 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
       </div>
 
       {/* Projects Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}
+        className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+      >
         <AnimatePresence mode="popLayout">
           {filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
+            filteredProjects.map((project, idx) => (
               <motion.div
                 layout
                 id={`project-${project.id}`}
                 key={project.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.4, ease: "circOut" }}
+                transition={{ 
+                  duration: 0.6, 
+                  delay: idx * 0.1,
+                  ease: [0.16, 1, 0.3, 1] 
+                }}
                 className="aspect-square bg-surface-card border border-surface-border relative group overflow-hidden"
               >
                 <img
@@ -121,7 +131,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
             </motion.p>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 }

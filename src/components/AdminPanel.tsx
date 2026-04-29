@@ -616,7 +616,11 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                               : 'Copy this code and run it in your Supabase SQL Editor:'}
                           </p>
                           <pre className="text-[9px] bg-zinc-950 p-4 overflow-x-auto text-zinc-300 font-mono border border-zinc-900 leading-tight select-all">
-{`-- 1. Ensure all required columns exist
+{`-- 1. Ensure all required columns exist in site_settings
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS description_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS description_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_image_url text;
@@ -630,7 +634,7 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS linkedin_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS google_maps_url text;
 
--- 2. Create inquiries table if it doesn't exist
+-- 2. Create inquiries table
 CREATE TABLE IF NOT EXISTS contact_inquiries (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at timestamptz DEFAULT now(),
@@ -640,11 +644,11 @@ CREATE TABLE IF NOT EXISTS contact_inquiries (
   message text
 );
 
--- 3. Fix potential "NOT NULL" constraint errors (makes slogan/name optional)
+-- 3. Fix constraints
 ALTER TABLE site_settings ALTER COLUMN slogan DROP NOT NULL;
 ALTER TABLE site_settings ALTER COLUMN name DROP NOT NULL;
 
--- 4. Enable RLS and public access for inquiries
+-- 4. Enable RLS
 ALTER TABLE contact_inquiries ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public insert" ON contact_inquiries;
 CREATE POLICY "Allow public insert" ON contact_inquiries FOR INSERT WITH CHECK (true);
@@ -653,16 +657,17 @@ CREATE POLICY "Allow admin select" ON contact_inquiries FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Allow admin delete" ON contact_inquiries;
 CREATE POLICY "Allow admin delete" ON contact_inquiries FOR DELETE USING (true);
 
--- 5. Ensure an initial settings record exists for ID 1
--- This uses placeholders for any other required columns you might have
-INSERT INTO site_settings (id, name, slogan) 
-VALUES (1, 'FJ Bauservice', 'Ihr Partner für Bauvorhaben') 
+-- 5. Ensure initial record
+INSERT INTO site_settings (id, name) 
+VALUES (1, 'FJ Bauservice') 
 ON CONFLICT (id) DO NOTHING;
 
--- 4. Enable RLS and public access if not already done
+-- 6. Enable site_settings RLS
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access" ON site_settings;
-CREATE POLICY "Allow public access" ON site_settings FOR ALL USING (true);`}
+DROP POLICY IF EXISTS "Allow public read" ON site_settings;
+CREATE POLICY "Allow public read" ON site_settings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public all" ON site_settings;
+CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                           </pre>
                         </div>
                       </motion.div>

@@ -17,8 +17,14 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
   }));
 
   return (
-    <section className="py-24 px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+    <section className="py-24 px-6 max-w-7xl mx-auto overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16"
+      >
         <h2 className="heading-dynamic text-5xl md:text-7xl">{t.services.title}</h2>
         <button 
           onClick={() => setCurrentPage?.('contact')}
@@ -26,19 +32,19 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
         >
           {t.services.all} <ArrowRight className="group-hover:translate-x-2 transition-transform" size={20} />
         </button>
-      </div>
+      </motion.div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {services.map((service, idx) => (
           <motion.div
             key={service.id}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: true, margin: "-100px" }}
             transition={{ 
-              delay: idx * 0.1,
-              duration: 0.5,
-              ease: [0.21, 0.47, 0.32, 0.98]
+              delay: idx * 0.15,
+              duration: 0.8,
+              ease: [0.16, 1, 0.3, 1]
             }}
             onClick={() => setCurrentPage?.('contact')}
             className="card-service flex flex-col gap-6 group hover:-translate-y-2 cursor-pointer text-left"

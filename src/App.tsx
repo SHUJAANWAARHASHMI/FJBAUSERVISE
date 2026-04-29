@@ -126,7 +126,13 @@ export default function App() {
             <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Services lang={language} setCurrentPage={setCurrentPage} />
             <WhyUs lang={language} />
-            <section className="py-24 px-6 max-w-7xl mx-auto space-y-16">
+            <motion.section 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="py-24 px-6 max-w-7xl mx-auto space-y-16"
+            >
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <h2 className="heading-dynamic text-5xl md:text-7xl">{t.nav.projects}</h2>
                 <p className="text-zinc-500 max-w-md">
@@ -134,7 +140,7 @@ export default function App() {
                 </p>
               </div>
               <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
-            </section>
+            </motion.section>
             <CTA settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Contact settings={siteSettings} lang={language} />
           </>
@@ -253,10 +259,10 @@ export default function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           >
             {renderPage()}
           </motion.div>

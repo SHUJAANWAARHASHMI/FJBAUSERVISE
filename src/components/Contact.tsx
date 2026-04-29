@@ -60,7 +60,13 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
     <section className="py-24 px-6 max-w-7xl mx-auto bg-surface-card border-x border-surface-border">
       <div className="grid lg:grid-cols-2 gap-16">
         {/* Left Column */}
-        <div className="space-y-12">
+        <motion.div 
+          initial={{ opacity: 0, x: -40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-12"
+        >
           <div className="space-y-6">
             <h2 className="heading-dynamic text-6xl">{t.contact.title}</h2>
             <p className="text-zinc-400 text-lg">
@@ -138,10 +144,16 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Column - Form */}
-        <div className="bg-surface-dark p-10 border border-surface-border relative overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-surface-dark p-10 border border-surface-border relative overflow-hidden"
+        >
           <form className="space-y-8" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
@@ -228,7 +240,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </AnimatePresence>
             </div>
           </form>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
