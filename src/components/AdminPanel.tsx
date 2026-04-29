@@ -449,24 +449,36 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Standort & Adresse' : 'Location & Address'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Vollständige Adresse' : 'Full Address'}</label>
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Adresse (Deutsch)' : 'Address (German)'}</label>
                       <input 
-                        type="text" value={settingsForm.address || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, address: e.target.value})}
+                        type="text" value={settingsForm.address_de || settingsForm.address || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, address_de: e.target.value})}
                         placeholder="Musterstraße 1, 83022 Rosenheim"
                         className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
                       />
                     </div>
                     <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Google Maps Embed URL' : 'Google Maps Embed URL'}</label>
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Adresse (Englisch)' : 'Address (English)'}</label>
                       <input 
-                        type="text" value={settingsForm.google_maps_url || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, google_maps_url: e.target.value})}
-                        placeholder="https://www.google.com/maps/embed?..."
+                        type="text" value={settingsForm.address_en || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, address_en: e.target.value})}
+                        placeholder="123 Example St, 83022 Rosenheim, Germany"
                         className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
                       />
-                      <p className="text-[9px] text-zinc-600 italic">
-                        {lang === 'de' ? 'Gehen Sie auf Google Maps -> Teilen -> Karte einbetten -> src-Link extrahieren' : 'Go to Google Maps -> Share -> Embed map -> extract the src link'}
+                    </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Google Maps Embed URL / Code' : 'Google Maps Embed URL / Code'}</label>
+                      <textarea 
+                        rows={2}
+                        value={settingsForm.google_maps_url || ''} 
+                        onChange={e => setSettingsForm({...settingsForm, google_maps_url: e.target.value})}
+                        placeholder={lang === 'de' ? 'https://www.google.com/maps/embed?... ODER <iframe...>' : 'https://www.google.com/maps/embed?... OR <iframe...>'}
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700 resize-none" 
+                      />
+                      <p className="text-[9px] text-zinc-600 italic leading-tight">
+                        {lang === 'de' 
+                          ? 'Gehen Sie auf Google Maps -> Teilen -> Karte einbetten. Kopieren Sie den gesamten <iframe...> Tag oder nur den Link im src-Attribut.' 
+                          : 'Go to Google Maps -> Share -> Embed map. Copy either the whole <iframe...> tag or just the URL from the src attribute.'}
                       </p>
                     </div>
                   </div>
@@ -632,6 +644,8 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS instagram_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS linkedin_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS google_maps_url text;
 
 -- 2. Create inquiries table

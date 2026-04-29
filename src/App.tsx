@@ -154,8 +154,8 @@ export default function App() {
                 <p>
                   {siteSettings?.name || 'FJ Bauservice'} 
                   {language === 'de' 
-                    ? ' ist ein professionelles Unternehmen mit Sitz in Rosenheim, das sich auf professionellen Abbruch, Entkernung und Kernbohrungen spezialisiert hat.'
-                    : ' is a professional company based in Rosenheim, specializing in professional demolition, gutting and core drilling.'}
+                    ? ` ist ein professionelles Unternehmen${siteSettings?.address_de || siteSettings?.address ? ` mit Sitz in ${(siteSettings?.address_de || siteSettings?.address).split(',')[0]}` : ' mit Sitz in Rosenheim'}, das sich auf professionellen Abbruch, Entkernung und Kernbohrungen spezialisiert hat.`
+                    : ` is a professional company${siteSettings?.address_en || siteSettings?.address ? ` based in ${(siteSettings?.address_en || siteSettings?.address).split(',')[0]}` : ' based in Rosenheim'}, specializing in professional demolition, gutting and core drilling.`}
                 </p>
                 <p>
                   {language === 'de' ? 'Unter dem Motto' : 'Under the motto'} "{language === 'en' ? (siteSettings?.slogan_en || t.nav.offer) : (siteSettings?.slogan_de || siteSettings?.slogan || 'Raum für Neues schaffen')}" 
@@ -207,9 +207,9 @@ export default function App() {
             <div className="prose prose-invert max-w-none space-y-8 text-zinc-400">
               <div>
                 <h2 className="text-xl font-bold text-white uppercase">{t.footer.impressum}</h2>
-                <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap">
+                <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap leading-relaxed">
                   {siteSettings?.name || 'FJ Bauservice'}{'\n'}
-                  {siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
+                  {(language === 'de' ? siteSettings?.address_de : siteSettings?.address_en) || siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
                   {language === 'de' ? 'Vertreten durch' : 'Represented by'}: Amjad Ali{'\n'}
                   {language === 'de' ? 'Kontakt' : 'Contact'}: {siteSettings?.email || 'amjad.ali@fj-bauservice.com'}
                 </div>

@@ -81,7 +81,7 @@ export default function Footer({ settings, lang, setCurrentPage }: { settings: a
       <div className="max-w-7xl mx-auto pt-10 border-t border-surface-border flex flex-col md:flex-row justify-between items-center gap-6">
         <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 {settings?.name || 'FJ BAUSERVICE'}.</p>
         <div className="flex items-center gap-8">
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">{settings?.address || 'Rosenheim, DE'}</p>
+          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">{(lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Rosenheim, DE'}</p>
           {(settings?.whatsapp_number || settings?.phone) && (
             <a 
               href={`https://wa.me/${(settings?.whatsapp_number || settings?.phone || '0159 06142923').replace(/\s+/g, '').replace('+', '')}`} 

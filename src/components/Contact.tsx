@@ -101,7 +101,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </div>
               <div>
                 <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest block mb-1">{t.contact.address}</span>
-                <span className="text-xl font-bold">{settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
+                <span className="text-xl font-bold">{(lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
               </div>
             </div>
           </div>
@@ -127,9 +127,27 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
 
           {/* Mini Map */}
           <div className="h-64 bg-surface-dark border border-surface-border overflow-hidden">
-            {settings?.google_maps_url ? (
+            {settings?.google_maps_url || settings?.address || settings?.address_de ? (
               <iframe 
-                src={settings.google_maps_url} 
+                src={(() => {
+                  let baseUrl = '';
+                  const val = settings?.google_maps_url || '';
+                  
+                  if (val.includes('<iframe')) {
+                    baseUrl = val.match(/src="([^"]+)"/)?.[1] || '';
+                  } else if (val.startsWith('http')) {
+                    baseUrl = val;
+                  } else {
+                    const queryAddress = (lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Rosenheim, Germany';
+                    baseUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                  }
+
+                  // Force the language (hl parameter)
+                  if (baseUrl.includes('?')) {
+                    return baseUrl.includes('hl=') ? baseUrl.replace(/hl=[a-z]{2}/, `hl=${lang}`) : `${baseUrl}&hl=${lang}`;
+                  }
+                  return `${baseUrl}?hl=${lang}`;
+                })()} 
                 width="100%" 
                 height="100%" 
                 style={{ border: 0, filter: 'grayscale(1) invert(0.9) contrast(1.2)' }} 
