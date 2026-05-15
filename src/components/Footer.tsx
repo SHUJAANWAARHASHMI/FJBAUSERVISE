@@ -1,9 +1,30 @@
+import { useState } from 'react';
 import { ArrowUp, Facebook, Instagram, Linkedin, Phone, Mail } from 'lucide-react';
 import { translations } from '../lib/translations';
 
-export default function Footer({ settings, lang, setCurrentPage }: { settings: any, lang: 'en' | 'de', setCurrentPage: (page: string) => void }) {
+interface FooterProps {
+  settings: any;
+  lang: 'en' | 'de';
+  setCurrentPage: (page: string) => void;
+  onAdminTrigger: () => void;
+}
+
+export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger }: FooterProps) {
   const t = translations[lang];
+  const [clickCount, setClickCount] = useState(0);
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const handleAdminClick = () => {
+    const newCount = clickCount + 1;
+    if (newCount >= 8) {
+      onAdminTrigger();
+      setClickCount(0);
+    } else {
+      setClickCount(newCount);
+      // Optional: reset count after 3 seconds of inactivity
+      setTimeout(() => setClickCount(0), 3000);
+    }
+  };
 
   return (
     <footer className="bg-surface-dark border-t border-surface-border pt-32 pb-12 px-6 relative overflow-hidden">
@@ -84,7 +105,12 @@ export default function Footer({ settings, lang, setCurrentPage }: { settings: a
       </div>
 
       <div className="max-w-7xl mx-auto pt-10 border-t border-surface-border flex flex-col md:flex-row justify-between items-center gap-6">
-        <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 {settings?.name || 'FJ BAUSERVICE'}.</p>
+        <p 
+          onClick={handleAdminClick}
+          className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em] cursor-default select-none"
+        >
+          © 2026 {settings?.name || 'FJ BAUSERVICE'}.
+        </p>
         <div className="flex items-center gap-8">
           <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">{(lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Rosenheim, DE'}</p>
           {(settings?.whatsapp_number || settings?.phone) && (

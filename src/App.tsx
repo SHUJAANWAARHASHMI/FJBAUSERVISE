@@ -317,7 +317,18 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Footer settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
+      <Footer 
+        settings={siteSettings} 
+        lang={language} 
+        setCurrentPage={setCurrentPage} 
+        onAdminTrigger={() => {
+          if (session) {
+            setIsAdminPanelOpen(true);
+          } else {
+            setIsLoginOpen(true);
+          }
+        }}
+      />
 
       <AnimatePresence>
         {isLoginOpen && !session && (

@@ -83,12 +83,6 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           ))}
           <div className="h-4 w-px bg-surface-border mx-2" />
           <button 
-            onClick={onAdminTrigger}
-            className="text-zinc-600 hover:text-primary transition-colors hover:bg-white/5 p-2 rounded-full"
-          >
-            <Lock size={16} />
-          </button>
-          <button 
             onClick={() => setCurrentPage('contact')}
             className="button-primary px-8"
           >
