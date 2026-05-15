@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ArrowRight, Lock, Sun, Moon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { translations } from '../lib/translations';
 
@@ -18,6 +18,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [clickCount, setClickCount] = useState(0);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,15 +31,24 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
   const t = translations[lang];
 
   const handleLogoClick = () => {
+    // Hidden admin trigger: 10 quick clicks
     const newCount = clickCount + 1;
     setClickCount(newCount);
     
+    // Always navigate home/scroll top on every click
+    setCurrentPage('home');
+    if (currentPage === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     if (newCount >= 10) { 
       onAdminTrigger();
       setClickCount(0);
-    } else {
-      setCurrentPage('home');
     }
+
+    // Reset click count after 3 seconds of inactivity
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = setTimeout(() => setClickCount(0), 3000);
   };
 
   const navLinks = [
@@ -51,7 +61,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
-      isScrolled ? 'bg-surface-dark h-16 border-white/10' : 'bg-surface-dark h-24 border-transparent'
+      isScrolled ? 'bg-surface-dark h-16 border-surface-border' : 'bg-surface-dark h-24 border-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
@@ -76,7 +86,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               key={link.id}
               onClick={() => setCurrentPage(link.id)}
               className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary relative group ${
-                currentPage === link.id ? 'text-primary' : 'text-zinc-600'
+                currentPage === link.id ? 'text-primary' : 'text-text-muted'
               }`}
             >
               {link.label}
@@ -123,7 +133,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] md:hidden"
+              className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[45] md:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div 

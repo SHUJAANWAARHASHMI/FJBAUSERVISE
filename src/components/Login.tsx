@@ -38,7 +38,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-surface-dark/90 backdrop-blur-sm">
       <div className="w-full max-w-md bg-surface-card border border-surface-border rounded-lg shadow-2xl relative overflow-hidden">
         {/* Progress Bar */}
         {isLoading && (
@@ -47,7 +47,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
 
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-500 hover:text-text-main transition-colors"
+          className="absolute top-4 right-4 text-text-muted hover:text-text-main transition-colors"
         >
           <X size={20} />
         </button>
@@ -60,41 +60,41 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
             <h2 className="text-2xl font-black heading-dynamic uppercase tracking-widest text-text-main">
               {lang === 'de' ? 'Admin Login' : 'Admin Login'}
             </h2>
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-tighter mt-2">
+            <p className="text-text-muted text-xs font-bold uppercase tracking-tighter mt-2">
               {lang === 'de' ? 'Zugriff nur für autorisiertes Personal' : 'Authorized access only'}
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block px-1">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest block px-1">
                 {lang === 'de' ? 'E-Mail Adresse' : 'Email Address'}
               </label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-primary transition-colors" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
+                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-text-muted/30 focus:outline-none transition-all rounded-md"
                   placeholder="admin@example.com"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block px-1">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest block px-1">
                 {lang === 'de' ? 'Passwort' : 'Password'}
               </label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-primary transition-colors" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
+                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-text-muted/30 focus:outline-none transition-all rounded-md"
                   placeholder="••••••••"
                 />
               </div>
@@ -123,8 +123,8 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
             </button>
           </form>
 
-          <div className="mt-12 pt-8 border-t border-zinc-800/50">
-            <p className="text-[9px] text-zinc-600 text-center uppercase font-black tracking-widest leading-relaxed">
+          <div className="mt-12 pt-8 border-t border-surface-border">
+            <p className="text-[9px] text-text-muted text-center uppercase font-black tracking-widest leading-relaxed">
               If you lost your access credentials, please contact your database administrator.
             </p>
           </div>

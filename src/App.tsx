@@ -113,6 +113,15 @@ export default function App() {
 
   const [isDarkMode, setIsDarkMode] = useState(true);
 
+  // Sync theme with document class
+  useEffect(() => {
+    if (!isDarkMode) {
+      document.documentElement.classList.add('theme-light');
+    } else {
+      document.documentElement.classList.remove('theme-light');
+    }
+  }, [isDarkMode]);
+
   // Smooth scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -139,7 +148,7 @@ export default function App() {
             >
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <h2 className="heading-dynamic text-4xl sm:text-5xl md:text-7xl">{t.nav.projects}</h2>
-                <p className="text-zinc-500 max-w-md">
+                <p className="text-text-muted max-w-md">
                   Hier finden Sie eine Auswahl unserer aktuellsten Projekte und Referenzen in der Region München und Rosenheim.
                 </p>
               </div>
@@ -163,7 +172,7 @@ export default function App() {
               </div>
 
               <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
-                <div className="space-y-10 text-zinc-500 text-lg md:text-xl font-medium leading-relaxed">
+                <div className="space-y-10 text-text-muted text-lg md:text-xl font-medium leading-relaxed">
                   <p className="text-text-main text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
                     "Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."
                   </p>
@@ -176,15 +185,15 @@ export default function App() {
                   <div className="pt-8 flex flex-wrap gap-12 border-t border-surface-border">
                     <div>
                       <span className="block text-4xl font-black text-primary italic leading-none">15+</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Jahre Erfahrung</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Jahre Erfahrung</span>
                     </div>
                     <div>
                       <span className="block text-4xl font-black text-primary italic leading-none">500+</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Projekte</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Projekte</span>
                     </div>
                     <div>
                       <span className="block text-4xl font-black text-primary italic leading-none">100%</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Termintreue</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Termintreue</span>
                     </div>
                   </div>
                 </div>
@@ -230,7 +239,7 @@ export default function App() {
             <div className="space-y-8 max-w-4xl">
               <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Projektarchiv</span>
               <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">Unsere<br /><span className="text-primary not-italic font-black">Werke.</span></h1>
-              <p className="text-zinc-500 max-w-2xl text-base md:text-lg font-medium leading-relaxed">
+              <p className="text-text-muted max-w-2xl text-base md:text-lg font-medium leading-relaxed">
                 Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte für gewerbliche und private Kunden in ganz Bayern.
               </p>
             </div>
@@ -255,7 +264,7 @@ export default function App() {
               description="Rechtliche Informationen und Datenschutzbestimmungen von FJ BAUSERVICE." 
             />
             <h1 className="heading-dynamic text-6xl">Rechtliches</h1>
-            <div className="prose prose-invert max-w-none space-y-8 text-zinc-500">
+            <div className={`prose ${isDarkMode ? 'prose-invert' : ''} max-w-none space-y-8 text-text-muted`}>
               <div>
                 <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.impressum}</h2>
                 <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap leading-relaxed">
@@ -284,13 +293,13 @@ export default function App() {
   if (isLoading) {
     return (
       <div className={`min-h-screen ${!isDarkMode ? 'theme-light' : ''} bg-surface-dark flex items-center justify-center`}>
-        <div className="heading-dynamic text-4xl animate-pulse text-zinc-800 tracking-[0.2em]">LOADING</div>
+        <div className="heading-dynamic text-4xl animate-pulse text-text-muted tracking-[0.2em]">LOADING</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${!isDarkMode ? 'theme-light' : ''} bg-surface-dark transition-colors duration-500`}>
+    <div className={`min-h-screen bg-surface-dark transition-colors duration-500`}>
       <Navbar 
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 

@@ -20,7 +20,7 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
   return (
     <section className="py-32 px-6 max-w-7xl mx-auto overflow-hidden relative">
       {/* Background Decorative Element */}
-      <div className="absolute -top-20 -right-20 text-[300px] font-black text-white/[0.02] select-none pointer-events-none italic">
+      <div className="absolute -top-20 -right-20 text-[300px] font-black text-text-main/5 select-none pointer-events-none italic">
         BAU
       </div>
 
@@ -59,16 +59,16 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
             className="card-service flex flex-col gap-8 group hover:-translate-y-3 cursor-pointer text-left h-full"
           >
             <div className="flex justify-between items-start z-10">
-              <div className="p-4 bg-white/5 rounded-sm group-hover:bg-primary transition-colors duration-500">
+              <div className="p-4 bg-surface-dark rounded-sm group-hover:bg-primary transition-colors duration-500">
                 {service.icon}
               </div>
-              <span className="text-white/5 font-black italic text-6xl absolute top-4 right-6 group-hover:text-primary/10 transition-colors pointer-events-none">
+              <span className="text-text-main/5 font-black italic text-6xl absolute top-4 right-6 group-hover:text-primary/10 transition-colors pointer-events-none">
                 {service.id}
               </span>
             </div>
             <div className="space-y-4 z-10">
               <h3 className="heading-dynamic text-3xl tracking-tight leading-tight group-hover:text-primary transition-colors">{service.title}</h3>
-              <p className="text-zinc-400 text-base leading-relaxed font-medium">
+              <p className="text-text-muted text-base leading-relaxed font-medium">
                 {service.desc}
               </p>
             </div>

@@ -265,7 +265,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
   const renderImageHistory = (field: string, isProject: boolean) => (
     imageHistory.length > 0 && (
       <div className="space-y-2 mt-4">
-        <label className="text-[9px] uppercase tracking-tighter text-zinc-600 font-black">
+        <label className="text-[9px] uppercase tracking-tighter text-text-muted font-black">
           {lang === 'de' ? 'Kürzlich hochgeladen' : 'Recent Uploads'}
         </label>
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -274,7 +274,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
               key={i}
               type="button"
               onClick={() => selectFromHistory(url, field, isProject)}
-              className="w-12 h-12 bg-zinc-900 border border-surface-border rounded-sm overflow-hidden shrink-0 hover:border-primary transition-all relative group"
+              className="w-12 h-12 bg-surface-dark border border-surface-border rounded-sm overflow-hidden shrink-0 hover:border-primary transition-all relative group"
             >
               <img src={url} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-100" />
             </button>
@@ -415,14 +415,14 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
+      className="fixed inset-0 z-[100] bg-surface-dark/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
     >
       <div className="bg-surface-card border border-surface-border w-full max-w-6xl h-full max-h-[850px] flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
         
         {/* Mobile Header (Hidden on Laptop) */}
         <div className="md:hidden flex items-center justify-between p-4 bg-surface-dark border-b border-surface-border">
           <h2 className="heading-dynamic text-primary text-xl">C-PANEL</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-2">
+          <button onClick={onClose} className="text-zinc-500 hover:text-text-main p-2">
             <X size={24} />
           </button>
         </div>
@@ -432,7 +432,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
           <div className="hidden md:flex p-6 flex-col gap-8">
             <div className="flex items-center justify-between">
               <h2 className="heading-dynamic text-primary text-2xl">C-PANEL</h2>
-              <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-white"><X /></button>
+              <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-text-main"><X /></button>
             </div>
           </div>
           
@@ -447,7 +447,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id as any); cancelEdit(); }}
                 className={`flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-[10px] md:text-xs tracking-widest transition-all whitespace-nowrap ${
-                  activeTab === tab.id ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                  activeTab === tab.id ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main hover:bg-surface-card'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -463,7 +463,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
           </nav>
 
           <div className="hidden md:flex mt-auto p-6">
-            <button onClick={onClose} className="flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-bold uppercase tracking-widest">
+            <button onClick={onClose} className="flex items-center gap-2 text-zinc-500 hover:text-text-main text-xs font-bold uppercase tracking-widest">
               <X size={16} /> {lang === 'de' ? 'Schließen' : 'Close'}
             </button>
           </div>
@@ -476,7 +476,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
             <div className="space-y-10 md:space-y-12">
               <div className="space-y-2">
                 <h3 className="heading-dynamic text-2xl md:text-4xl">{lang === 'de' ? 'Webseiten-Einstellungen' : 'Website Settings'}</h3>
-                <p className="text-zinc-500 text-[11px] md:text-sm">{lang === 'de' ? 'Verwalten Sie die globalen Inhalte und Bilder Ihrer Webseite.' : 'Manage global content and images of your website.'}</p>
+                <p className="text-text-muted text-[11px] md:text-sm">{lang === 'de' ? 'Verwalten Sie die globalen Inhalte und Bilder Ihrer Webseite.' : 'Manage global content and images of your website.'}</p>
               </div>
 
               <form onSubmit={handleUpdateSettings} className="space-y-10 md:space-y-12">
@@ -545,11 +545,11 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                 </div>
 
                 {/* Location Section */}
-                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Standort & Adresse' : 'Location & Address'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Adresse (Deutsch)' : 'Address (German)'}</label>
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{lang === 'de' ? 'Adresse (Deutsch)' : 'Address (German)'}</label>
                       <input 
                         type="text" value={settingsForm.address_de || settingsForm.address || ''} 
                         onChange={e => setSettingsForm({...settingsForm, address_de: e.target.value})}
@@ -558,12 +558,12 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                       />
                     </div>
                     <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Adresse (Englisch)' : 'Address (English)'}</label>
+                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{lang === 'de' ? 'Adresse (Englisch)' : 'Address (English)'}</label>
                       <input 
                         type="text" value={settingsForm.address_en || ''} 
                         onChange={e => setSettingsForm({...settingsForm, address_en: e.target.value})}
                         placeholder="123 Example St, 83022 Rosenheim, Germany"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
+                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-text-muted/30" 
                       />
                     </div>
                     <div className="space-y-3 md:space-y-4">
@@ -584,7 +584,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   </div>
                 </div>
 
-                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Social Media Links' : 'Social Media Links'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-3 md:space-y-4">
@@ -626,7 +626,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                   </div>
                 </div>
 
-                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-3 md:space-y-4">
@@ -651,7 +651,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                 </div>
 
                 {/* Image Section */}
-                <div className="space-y-6 md:space-y-8 bg-black/40 p-4 md:p-8 border border-surface-border rounded-sm">
+                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Seiten-Bilder' : 'Site Images'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     {[
@@ -676,7 +676,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                           className="w-full bg-surface-dark border border-surface-border p-2.5 md:p-3 rounded-sm focus:border-primary outline-none text-[11px] md:text-xs" 
                         />
                         {settingsForm[img.id] && (
-                          <div className="aspect-video w-full bg-zinc-900 rounded-sm overflow-hidden border border-surface-border">
+                          <div className="aspect-video w-full bg-surface-card rounded-sm overflow-hidden border border-surface-border">
                             <img src={settingsForm[img.id]} alt="" className="w-full h-full object-cover opacity-50" />
                           </div>
                         )}
@@ -726,7 +726,7 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                               ? 'Kopieren Sie diesen Code und führen Sie ihn im Supabase SQL Editor aus:'
                               : 'Copy this code and run it in your Supabase SQL Editor:'}
                           </p>
-                          <pre className="text-[9px] bg-zinc-950 p-4 overflow-x-auto text-zinc-300 font-mono border border-zinc-900 leading-tight select-all">
+                          <pre className="text-[9px] bg-surface-dark p-4 overflow-x-auto text-text-muted font-mono border border-surface-border leading-tight select-all">
 {`-- 1. Ensure all required columns exist in site_settings
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_en text;
@@ -795,7 +795,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
             <div className="space-y-12">
               <div className="space-y-2">
                 <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Projekt-Verwaltung' : 'Project Management'}</h3>
-                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Neue Projekte hinzufügen oder bestehende bearbeiten.' : 'Add new projects or edit existing ones.'}</p>
+                <p className="text-text-muted text-sm">{lang === 'de' ? 'Neue Projekte hinzufügen oder bestehende bearbeiten.' : 'Add new projects or edit existing ones.'}</p>
               </div>
 
               {/* Project Form */}
@@ -877,7 +877,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                       {editingProject ? (lang === 'de' ? 'Speichern' : 'Save Changes') : (lang === 'de' ? 'Hinzufügen' : 'Add Project')}
                     </button>
                     {editingProject && (
-                      <button type="button" onClick={cancelEdit} className="px-6 border border-surface-border text-zinc-500 hover:text-white transition-colors uppercase text-xs font-black tracking-widest">
+                      <button type="button" onClick={cancelEdit} className="px-6 border border-surface-border text-zinc-500 hover:text-text-main transition-colors uppercase text-xs font-black tracking-widest">
                         {lang === 'de' ? 'Abbrechen' : 'Cancel'}
                       </button>
                     )}
@@ -889,7 +889,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
               <div className="grid sm:grid-cols-2 gap-4">
                 {projects.map(project => (
                   <div key={project.id} className="bg-surface-dark border border-surface-border p-4 flex items-center gap-4 group">
-                    <div className="w-16 h-16 bg-zinc-800 rounded-sm overflow-hidden shrink-0">
+                    <div className="w-16 h-16 bg-surface-card rounded-sm overflow-hidden shrink-0">
                       <img src={project.image_url} alt="" className="w-full h-full object-cover opacity-60" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -914,7 +914,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
             <div className="space-y-12">
               <div className="space-y-2">
                 <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Kontakt-Anfragen' : 'Contact Inquiries'}</h3>
-                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Erhaltene Nachrichten über das Kontaktformular.' : 'Messages received through the contact form.'}</p>
+                <p className="text-text-muted text-sm">{lang === 'de' ? 'Erhaltene Nachrichten über das Kontaktformular.' : 'Messages received through the contact form.'}</p>
               </div>
 
               {loadingInquiries ? (
@@ -947,8 +947,8 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                       </div>
 
                       <div className="space-y-2">
-                        <h4 className="font-bold text-white">{inquiry.subject}</h4>
-                        <p className="text-zinc-400 text-sm leading-relaxed">{inquiry.message}</p>
+                        <h4 className="font-bold text-text-main">{inquiry.subject}</h4>
+                        <p className="text-zinc-500 text-sm leading-relaxed">{inquiry.message}</p>
                       </div>
                     </div>
                   ))}
@@ -961,7 +961,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
             <div className="space-y-12">
               <div className="space-y-2">
                 <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Daten-Verwaltung' : 'Data Management'}</h3>
-                <p className="text-zinc-500 text-sm">{lang === 'de' ? 'Sichern Sie Ihre Webseitendaten oder stellen Sie diese aus einer Datei wieder her.' : 'Backup your website data or restore it from a file.'}</p>
+                <p className="text-text-muted text-sm">{lang === 'de' ? 'Sichern Sie Ihre Webseitendaten oder stellen Sie diese aus einer Datei wieder her.' : 'Backup your website data or restore it from a file.'}</p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-8">
@@ -997,7 +997,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                   </div>
                   <div className="mt-auto">
                     <label className="cursor-pointer">
-                      <div className="button-primary w-full justify-center gap-2 bg-zinc-900 border-zinc-700 hover:bg-zinc-800 text-white">
+                      <div className="button-primary w-full justify-center gap-2 bg-surface-card border-surface-border hover:bg-surface-dark text-text-main">
                         {isRestoring ? <Loader2 className="animate-spin" /> : <Mail size={20} />}
                         {lang === 'de' ? 'Backup-Datei auswählen' : 'Select Backup File'}
                       </div>
@@ -1013,7 +1013,7 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                 </div>
               </div>
 
-              <div className="p-6 bg-zinc-950 border border-zinc-900 rounded-sm">
+              <div className="p-6 bg-surface-dark border border-surface-border rounded-sm">
                 <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-4">{lang === 'de' ? 'Hin Weise zur Datensicherung' : 'Backup Guidelines'}</h5>
                 <ul className="text-[11px] text-zinc-500 space-y-2 list-disc pl-4 leading-relaxed">
                   <li>{lang === 'de' ? 'Backups enthalten keine Bilder selbst, sondern nur die URLs zu den Bildern.' : 'Backups do not contain the actual images, but only the URLs to the images.'}</li>

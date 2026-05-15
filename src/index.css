@@ -10,7 +10,9 @@
   --color-surface-card: var(--card-color);
   --color-surface-border: var(--border-color);
   --color-text-main: var(--text-color);
+  --color-text-muted: var(--text-muted);
   --color-shadow-main: var(--shadow-color);
+  --map-filter: var(--filter-map);
 }
 
 :root {
@@ -19,6 +21,9 @@
   --border-color: #222222;
   --text-color: #ffffff;
   --shadow-color: #ffffff;
+  --text-muted: #71717a;
+  --dot-color: rgba(255, 255, 255, 0.02);
+  --filter-map: grayscale(1) invert(0.9) contrast(1.2);
 }
 
 .theme-light {
@@ -27,12 +32,15 @@
   --border-color: #dddddd;
   --text-color: #000000;
   --shadow-color: #000000;
+  --text-muted: #52525b;
+  --dot-color: rgba(0, 0, 0, 0.05);
+  --filter-map: grayscale(1) contrast(1.2);
 }
 
 @layer base {
   body {
-    @apply bg-surface-dark text-text-main font-sans antialiased selection:bg-primary selection:text-black;
-    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.02) 1px, transparent 0);
+    @apply bg-surface-dark text-text-main font-sans antialiased selection:bg-primary selection:text-text-main;
+    background-image: radial-gradient(circle at 1px 1px, var(--dot-color) 1px, transparent 0);
     background-size: 30px 30px;
   }
 }
@@ -42,7 +50,7 @@
 }
 
 .button-primary {
-  @apply bg-primary text-black font-extrabold py-4 px-8 flex items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 uppercase tracking-widest text-sm;
+  @apply bg-primary text-black font-extrabold py-4 px-8 flex items-center gap-2 hover:bg-text-main hover:text-surface-dark transition-all duration-300 uppercase tracking-widest text-sm;
 }
 
 .card-service {

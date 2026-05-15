@@ -29,7 +29,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
               {t.whyUs.title.split(' ').slice(1).join(' ')}
             </span>
           </h2>
-          <p className="text-zinc-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
+          <p className="text-text-muted text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
             {t.whyUs.subtitle}
           </p>
         </motion.div>
@@ -46,16 +46,16 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
                 duration: 0.8,
                 ease: [0.16, 1, 0.3, 1]
               }}
-              className="bg-white/5 border border-white/10 p-8 md:p-12 space-y-6 group hover:bg-primary transition-all duration-500 rounded-sm"
+              className="bg-surface-card border border-surface-border p-8 md:p-12 space-y-6 group hover:bg-primary transition-all duration-500 rounded-sm"
             >
-              <div className="w-16 h-16 bg-white/5 rounded-sm flex items-center justify-center border border-white/10 group-hover:bg-white group-hover:border-white transition-colors duration-500">
+              <div className="w-16 h-16 bg-surface-dark rounded-sm flex items-center justify-center border border-surface-border group-hover:bg-white group-hover:border-white transition-colors duration-500">
                 {point.icon}
               </div>
               <div className="space-y-4">
                 <h4 className="text-2xl font-black uppercase tracking-tight text-text-main group-hover:text-black transition-colors">
                   {point.title}
                 </h4>
-                <p className="text-zinc-500 font-medium leading-relaxed group-hover:text-black/80 transition-colors">
+                <p className="text-text-muted font-medium leading-relaxed group-hover:text-black/80 transition-colors">
                   {point.desc}
                 </p>
               </div>

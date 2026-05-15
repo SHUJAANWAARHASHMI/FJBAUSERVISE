@@ -24,7 +24,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
               className="w-full h-full object-cover opacity-30 filter grayscale sepia-[0.2] group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-surface-dark/40 to-transparent" />
           </div>
 
           <div className="absolute top-0 right-0 p-6">
@@ -54,7 +54,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-zinc-400 text-sm md:text-xl max-w-md font-medium border-l-2 border-primary pl-4 md:pl-6"
+              className="text-text-muted text-sm md:text-xl max-w-md font-medium border-l-2 border-primary pl-4 md:pl-6"
             >
               {currentDesc}
             </motion.p>
@@ -79,26 +79,26 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
         <div className="grid md:grid-cols-2 lg:grid-cols-1 lg:col-span-4 gap-6">
           <div className="bg-surface-card border border-surface-border p-8 md:p-10 flex flex-col justify-center gap-3 group hover:border-primary transition-colors">
             <span className="text-text-main text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_years || '15+'}</span>
-            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-zinc-500 underline decoration-primary decoration-4 underline-offset-8">
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-text-muted underline decoration-primary decoration-4 underline-offset-8">
               {t.hero.stats.experience}
             </span>
           </div>
           
           <div className="bg-surface-card border border-surface-border p-8 md:p-10 flex flex-col justify-center gap-3 group hover:border-primary transition-colors">
             <span className="text-text-main text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_projects || '500+'}</span>
-            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-zinc-500 underline decoration-primary decoration-4 underline-offset-8">
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-text-muted underline decoration-primary decoration-4 underline-offset-8">
               {t.hero.stats.projects}
             </span>
           </div>
 
           <div 
             onClick={() => setCurrentPage('contact')}
-            className="md:col-span-2 lg:col-span-1 bg-primary p-8 md:p-10 flex items-center justify-between group cursor-pointer hover:bg-text-main transition-all duration-500"
+            className="md:col-span-2 lg:col-span-1 bg-primary p-8 md:p-10 flex items-center justify-between group cursor-pointer hover:bg-text-main hover:text-surface-dark transition-all duration-500"
           >
             <div className="space-y-1">
-              <span className="text-black text-2xl md:text-3xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>
+              <span className="text-black group-hover:text-surface-dark text-2xl md:text-3xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>
             </div>
-            <ArrowRight className="text-black group-hover:translate-x-2 transition-transform" size={40} strokeWidth={3} />
+            <ArrowRight className="text-black group-hover:text-surface-dark group-hover:translate-x-2 transition-all" size={40} strokeWidth={3} />
           </div>
         </div>
       </div>
