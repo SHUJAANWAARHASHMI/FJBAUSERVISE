@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ArrowRight, Lock } from 'lucide-react';
+import { Menu, X, ArrowRight, Lock, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 import { translations } from '../lib/translations';
@@ -10,9 +10,11 @@ interface NavbarProps {
   settings: any;
   onAdminTrigger: () => void;
   lang: 'en' | 'de';
+  isDarkMode: boolean;
+  toggleTheme: () => void;
 }
 
-export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang }: NavbarProps) {
+export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang, isDarkMode, toggleTheme }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [clickCount, setClickCount] = useState(0);
@@ -49,7 +51,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
-      isScrolled ? 'bg-surface-dark/90 backdrop-blur-md h-16 border-white/10' : 'bg-transparent h-24 border-transparent'
+      isScrolled ? 'bg-surface-dark h-16 border-white/10' : 'bg-surface-dark h-24 border-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
@@ -57,7 +59,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           className="flex items-center gap-3 cursor-pointer group"
           onClick={handleLogoClick}
         >
-          <div className="bg-primary text-black font-black w-10 h-10 flex items-center justify-center text-xl shadow-[4px_4px_0px_0px_white]">
+          <div className="bg-primary text-black font-black w-10 h-10 flex items-center justify-center text-xl shadow-[4px_4px_0px_0px_var(--shadow-color)]">
             {settings?.name?.substring(0, 2) || 'FJ'}
           </div>
           <div className="flex flex-col -space-y-1">
@@ -74,7 +76,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               key={link.id}
               onClick={() => setCurrentPage(link.id)}
               className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary relative group ${
-                currentPage === link.id ? 'text-primary' : 'text-zinc-400'
+                currentPage === link.id ? 'text-primary' : 'text-zinc-600'
               }`}
             >
               {link.label}
@@ -82,6 +84,13 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
             </button>
           ))}
           <div className="h-4 w-px bg-surface-border mx-2" />
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-text-main hover:text-primary transition-colors"
+            title={isDarkMode ? "Light Mode" : "Dark Mode"}
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <button 
             onClick={() => setCurrentPage('contact')}
             className="button-primary px-8"
@@ -91,12 +100,20 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
         </div>
 
         {/* Mobile Toggle */}
-        <button 
-          className="md:hidden text-white"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
+        <div className="flex items-center gap-4 md:hidden">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-text-main hover:text-primary transition-colors"
+          >
+            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
+          <button 
+            className="text-text-main"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -125,7 +142,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
                       setIsMobileMenuOpen(false);
                     }}
                     className={`text-2xl font-black uppercase tracking-tight text-left transition-colors ${
-                      currentPage === link.id ? 'text-primary' : 'text-white hover:text-primary'
+                      currentPage === link.id ? 'text-primary' : 'text-text-main hover:text-primary'
                     }`}
                   >
                     {link.label}

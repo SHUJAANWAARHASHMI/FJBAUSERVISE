@@ -30,7 +30,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
           <div className="absolute top-0 right-0 p-6">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-primary animate-pulse" />
-              <span className="text-white text-[10px] md:text-xs font-bold uppercase tracking-[0.3em]">
+              <span className="text-text-main text-[10px] md:text-xs font-bold uppercase tracking-[0.3em]">
                 {t.hero.badge}
               </span>
             </div>
@@ -45,7 +45,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
             <motion.h1 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="heading-dynamic text-4xl sm:text-5xl md:text-7xl lg:text-8xl max-w-2xl leading-[1.1] md:leading-[0.85] text-white"
+              className="heading-dynamic text-4xl sm:text-5xl md:text-7xl lg:text-8xl max-w-2xl leading-[1.1] md:leading-[0.85] text-text-main"
             >
               {currentSlogan}
             </motion.h1>
@@ -66,7 +66,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
             >
               <button 
                 onClick={() => setCurrentPage('contact')}
-                className="button-primary group/btn w-full md:w-auto justify-center shadow-[6px_6px_0px_0px_white] active:shadow-none active:translate-x-1 active:translate-y-1"
+                className="button-primary group/btn w-full md:w-auto justify-center shadow-[6px_6px_0px_0px_var(--shadow-color)] active:shadow-none active:translate-x-1 active:translate-y-1"
               >
                 {t.nav.offer} 
                 <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" size={18} strokeWidth={3} />
@@ -78,14 +78,14 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
         {/* Stats Column */}
         <div className="grid md:grid-cols-2 lg:grid-cols-1 lg:col-span-4 gap-6">
           <div className="bg-surface-card border border-surface-border p-8 md:p-10 flex flex-col justify-center gap-3 group hover:border-primary transition-colors">
-            <span className="text-white text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_years || '15+'}</span>
+            <span className="text-text-main text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_years || '15+'}</span>
             <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-zinc-500 underline decoration-primary decoration-4 underline-offset-8">
               {t.hero.stats.experience}
             </span>
           </div>
           
           <div className="bg-surface-card border border-surface-border p-8 md:p-10 flex flex-col justify-center gap-3 group hover:border-primary transition-colors">
-            <span className="text-white text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_projects || '500+'}</span>
+            <span className="text-text-main text-5xl md:text-7xl font-black font-display tracking-tighter group-hover:text-primary transition-colors">{settings?.stats_projects || '500+'}</span>
             <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-zinc-500 underline decoration-primary decoration-4 underline-offset-8">
               {t.hero.stats.projects}
             </span>
@@ -93,7 +93,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
 
           <div 
             onClick={() => setCurrentPage('contact')}
-            className="md:col-span-2 lg:col-span-1 bg-primary p-8 md:p-10 flex items-center justify-between group cursor-pointer hover:bg-white transition-all duration-500"
+            className="md:col-span-2 lg:col-span-1 bg-primary p-8 md:p-10 flex items-center justify-between group cursor-pointer hover:bg-text-main transition-all duration-500"
           >
             <div className="space-y-1">
               <span className="text-black text-2xl md:text-3xl font-black heading-dynamic leading-none block">{t.hero.stats.contact}</span>

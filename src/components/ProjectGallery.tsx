@@ -54,7 +54,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
           className={`px-8 py-3 text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 border relative overflow-hidden group ${
             activeCategory === 'all'
               ? 'bg-primary text-black border-primary'
-              : 'bg-transparent text-zinc-500 hover:text-white border-white/10'
+              : 'bg-transparent text-zinc-500 hover:text-text-main border-surface-border'
           }`}
         >
           <span className="relative z-10">{t.services.all}</span>
@@ -67,7 +67,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
             className={`px-8 py-3 text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 border relative overflow-hidden group ${
               activeCategory === category
                 ? 'bg-primary text-black border-primary'
-                : 'bg-transparent text-zinc-500 hover:text-white border-white/10'
+                : 'bg-transparent text-zinc-500 hover:text-text-main border-surface-border'
             }`}
           >
             <span className="relative z-10">{category}</span>

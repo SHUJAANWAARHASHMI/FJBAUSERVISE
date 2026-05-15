@@ -58,7 +58,7 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
           viewport={{ once: true }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           onClick={() => setCurrentPage('contact')}
-          className="bg-black text-white hover:bg-white hover:text-black px-16 py-8 font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[10px_10px_0px_0px_white] hover:shadow-none active:translate-x-2 active:translate-y-2"
+          className="bg-surface-dark text-text-main hover:bg-text-main hover:text-surface-dark px-16 py-8 font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[10px_10px_0px_0px_var(--shadow-color)] hover:shadow-none active:translate-x-2 active:translate-y-2"
         >
           {t.cta.button}
         </motion.button>

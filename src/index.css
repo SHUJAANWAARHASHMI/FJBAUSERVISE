@@ -6,14 +6,32 @@
   --font-display: "Montserrat", sans-serif;
   
   --color-primary: #ff751f;
-  --color-surface-dark: #000000;
-  --color-surface-card: #111111;
-  --color-surface-border: #222222;
+  --color-surface-dark: var(--bg-color);
+  --color-surface-card: var(--card-color);
+  --color-surface-border: var(--border-color);
+  --color-text-main: var(--text-color);
+  --color-shadow-main: var(--shadow-color);
+}
+
+:root {
+  --bg-color: #000000;
+  --card-color: #111111;
+  --border-color: #222222;
+  --text-color: #ffffff;
+  --shadow-color: #ffffff;
+}
+
+.theme-light {
+  --bg-color: #ffffff;
+  --card-color: #f3f3f3;
+  --border-color: #dddddd;
+  --text-color: #000000;
+  --shadow-color: #000000;
 }
 
 @layer base {
   body {
-    @apply bg-surface-dark text-white font-sans antialiased selection:bg-primary selection:text-black;
+    @apply bg-surface-dark text-text-main font-sans antialiased selection:bg-primary selection:text-black;
     background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.02) 1px, transparent 0);
     background-size: 30px 30px;
   }

@@ -23,7 +23,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
           className="text-center space-y-6 md:space-y-8 max-w-4xl mx-auto"
         >
           <span className="text-primary font-bold tracking-[0.4em] uppercase text-xs">Qualität & Vertrauen</span>
-          <h2 className="heading-dynamic text-5xl md:text-8xl italic leading-[1] text-white">
+          <h2 className="heading-dynamic text-5xl md:text-8xl italic leading-[1] text-text-main">
             {t.whyUs.title.split(' ')[0]} <br className="hidden md:block" />
             <span className="text-primary font-black not-italic border-b-4 md:border-b-8 border-primary/20">
               {t.whyUs.title.split(' ').slice(1).join(' ')}
@@ -52,7 +52,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
                 {point.icon}
               </div>
               <div className="space-y-4">
-                <h4 className="text-2xl font-black uppercase tracking-tight text-white group-hover:text-black transition-colors">
+                <h4 className="text-2xl font-black uppercase tracking-tight text-text-main group-hover:text-black transition-colors">
                   {point.title}
                 </h4>
                 <p className="text-zinc-500 font-medium leading-relaxed group-hover:text-black/80 transition-colors">
@@ -71,7 +71,7 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full px-2 md:px-0 md:pr-10"
         >
-          <div className="bg-primary p-6 md:p-20 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-[8px_8px_0px_0px_white] md:shadow-[20px_20px_0px_0px_white] max-w-full overflow-hidden lg:overflow-visible">
+          <div className="bg-primary p-6 md:p-20 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-[8px_8px_0px_0px_var(--shadow-color)] md:shadow-[20px_20px_0px_0px_var(--shadow-color)] max-w-full overflow-hidden lg:overflow-visible">
             <div className="space-y-4 text-center lg:text-left w-full lg:w-auto">
               <span className="text-black text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black font-display leading-[0.85] md:leading-[0.8] uppercase italic tracking-tighter block whitespace-normal break-words">
                 100%<br />Professionell

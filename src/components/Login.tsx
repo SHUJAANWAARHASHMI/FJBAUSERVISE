@@ -39,7 +39,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-surface-card border border-surface-border rounded-lg shadow-2xl relative overflow-hidden">
         {/* Progress Bar */}
         {isLoading && (
           <div className="absolute top-0 left-0 h-1 bg-primary animate-[shimmer_2s_infinite]" style={{ width: '100%', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.5), transparent)' }} />
@@ -47,7 +47,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
 
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-zinc-500 hover:text-text-main transition-colors"
         >
           <X size={20} />
         </button>
@@ -57,7 +57,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Lock className="text-primary" size={24} />
             </div>
-            <h2 className="text-2xl font-black heading-dynamic uppercase tracking-widest text-white">
+            <h2 className="text-2xl font-black heading-dynamic uppercase tracking-widest text-text-main">
               {lang === 'de' ? 'Admin Login' : 'Admin Login'}
             </h2>
             <p className="text-zinc-500 text-xs font-bold uppercase tracking-tighter mt-2">
@@ -77,7 +77,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-primary px-12 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
+                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
                   placeholder="admin@example.com"
                 />
               </div>
@@ -94,7 +94,7 @@ export default function Login({ onLoginStatus, onClose, lang }: LoginProps) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-primary px-12 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
+                  className="w-full bg-surface-dark border border-surface-border focus:border-primary px-12 py-3 text-sm text-text-main placeholder:text-zinc-700 focus:outline-none transition-all rounded-md"
                   placeholder="••••••••"
                 />
               </div>

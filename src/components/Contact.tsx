@@ -68,8 +68,8 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
         >
           <div className="space-y-8">
             <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Bereit für Ihr Projekt?</span>
-            <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-white leading-[1.1] md:leading-none">{t.contact.title}</h2>
-            <p className="text-zinc-400 text-base md:text-xl font-medium max-w-lg leading-relaxed">
+            <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-text-main leading-[1.1] md:leading-none">{t.contact.title}</h2>
+            <p className="text-zinc-500 text-base md:text-xl font-medium max-w-lg leading-relaxed">
               Planen Sie einen Abbruch in München oder eine Sanierung in Rosenheim? Unser Expertenteam steht Ihnen für eine kostenlose Erstberatung und Besichtigung zur Verfügung.
             </p>
           </div>
@@ -81,7 +81,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </div>
               <div className="space-y-1">
                 <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2">{t.contact.call}</span>
-                <a href={`tel:${(settings?.phone || '015906142923').replace(/\s+/g, '')}`} className="text-xl md:text-2xl font-black text-white hover:text-primary transition-colors block">{settings?.phone || '+49 159 06142923'}</a>
+                <a href={`tel:${(settings?.phone || '015906142923').replace(/\s+/g, '')}`} className="text-xl md:text-2xl font-black text-text-main hover:text-primary transition-colors block">{settings?.phone || '+49 159 06142923'}</a>
               </div>
             </div>
             
@@ -91,7 +91,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </div>
               <div className="space-y-1">
                 <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2 font-display">{t.contact.email}</span>
-                <a href={`mailto:${settings?.email || 'amjad.ali@fj-bauservice.com'}`} className="text-xl md:text-2xl font-black text-white hover:text-primary transition-colors block break-all">{settings?.email || 'amjad.ali@fj-bauservice.com'}</a>
+                <a href={`mailto:${settings?.email || 'amjad.ali@fj-bauservice.com'}`} className="text-xl md:text-2xl font-black text-text-main hover:text-primary transition-colors block break-all">{settings?.email || 'amjad.ali@fj-bauservice.com'}</a>
               </div>
             </div>
 
@@ -101,7 +101,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               </div>
               <div className="space-y-1">
                 <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2">{t.contact.address}</span>
-                <span className="text-xl md:text-2xl font-black text-white">{settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
+                <span className="text-xl md:text-2xl font-black text-text-main">{settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
+                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-text-main font-bold" 
                 />
               </div>
               <div className="space-y-4">
@@ -176,7 +176,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
+                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-text-main font-bold" 
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                 placeholder="z.B. Abbruch München Projekt"
                 value={formData.subject}
                 onChange={handleChange}
-                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
+                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-text-main font-bold" 
               />
             </div>
 
@@ -202,7 +202,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                 value={formData.message}
                 onChange={handleChange}
                 required
-                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold resize-none" 
+                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-text-main font-bold resize-none" 
               />
             </div>
 

@@ -33,11 +33,11 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
       >
         <div className="space-y-4">
           <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">{t.services.subtitle}</span>
-          <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-white leading-[1.1]">{t.services.title}</h2>
+          <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-text-main leading-[1.1]">{t.services.title}</h2>
         </div>
         <button 
           onClick={() => setCurrentPage?.('contact')}
-          className="flex items-center gap-3 text-white font-black uppercase tracking-[0.2em] text-sm hover:text-primary transition-colors group border-b-2 border-white hover:border-primary pb-1"
+          className="flex items-center gap-3 text-text-main font-black uppercase tracking-[0.2em] text-sm hover:text-primary transition-colors group border-b-2 border-surface-border hover:border-primary pb-1"
         >
           {t.services.all} <ArrowRight className="group-hover:translate-x-2 transition-transform" size={18} strokeWidth={3} />
         </button>
@@ -72,7 +72,7 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
                 {service.desc}
               </p>
             </div>
-            <div className="mt-auto pt-4 flex items-center gap-2 text-white font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <div className="mt-auto pt-4 flex items-center gap-2 text-text-main font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity z-10">
               Details anfragen <ArrowRight size={14} strokeWidth={3} />
             </div>
             

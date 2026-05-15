@@ -111,6 +111,8 @@ export default function App() {
     fetchData();
   }, []);
 
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   // Smooth scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -157,12 +159,12 @@ export default function App() {
             <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
               <div className="space-y-8 max-w-4xl">
                  <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Unsere Geschichte</span>
-                 <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-white">Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span></h1>
+                 <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span></h1>
               </div>
 
               <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
-                <div className="space-y-10 text-zinc-400 text-lg md:text-xl font-medium leading-relaxed">
-                  <p className="text-white text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
+                <div className="space-y-10 text-zinc-500 text-lg md:text-xl font-medium leading-relaxed">
+                  <p className="text-text-main text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
                     "Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."
                   </p>
                   <p>
@@ -171,7 +173,7 @@ export default function App() {
                   <p>
                     Unser Anspruch ist absolute Termintreue und eine saubere, sichere Baustelle. Wir verstehen uns als Partner von Architekten, Bauherren und Kommunen, die Wert auf höchste Qualität und professionelle Abwicklung legen.
                   </p>
-                  <div className="pt-8 flex flex-wrap gap-12 border-t border-white/5">
+                  <div className="pt-8 flex flex-wrap gap-12 border-t border-surface-border">
                     <div>
                       <span className="block text-4xl font-black text-primary italic leading-none">15+</span>
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Jahre Erfahrung</span>
@@ -227,7 +229,7 @@ export default function App() {
             />
             <div className="space-y-8 max-w-4xl">
               <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Projektarchiv</span>
-              <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-white">Unsere<br /><span className="text-primary not-italic font-black">Werke.</span></h1>
+              <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">Unsere<br /><span className="text-primary not-italic font-black">Werke.</span></h1>
               <p className="text-zinc-500 max-w-2xl text-base md:text-lg font-medium leading-relaxed">
                 Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte für gewerbliche und private Kunden in ganz Bayern.
               </p>
@@ -253,9 +255,9 @@ export default function App() {
               description="Rechtliche Informationen und Datenschutzbestimmungen von FJ BAUSERVICE." 
             />
             <h1 className="heading-dynamic text-6xl">Rechtliches</h1>
-            <div className="prose prose-invert max-w-none space-y-8 text-zinc-400">
+            <div className="prose prose-invert max-w-none space-y-8 text-zinc-500">
               <div>
-                <h2 className="text-xl font-bold text-white uppercase">{t.footer.impressum}</h2>
+                <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.impressum}</h2>
                 <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap leading-relaxed">
                   {siteSettings?.name || 'FJ Bauservice'}{'\n'}
                   {(language === 'de' ? siteSettings?.address_de : siteSettings?.address_en) || siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
@@ -264,7 +266,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white uppercase">{t.footer.privacy}</h2>
+                <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.privacy}</h2>
                 <p>
                   {language === 'de' 
                     ? 'Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO).'
@@ -281,14 +283,14 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-dark flex items-center justify-center">
+      <div className={`min-h-screen ${!isDarkMode ? 'theme-light' : ''} bg-surface-dark flex items-center justify-center`}>
         <div className="heading-dynamic text-4xl animate-pulse text-zinc-800 tracking-[0.2em]">LOADING</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${!isDarkMode ? 'theme-light' : ''} bg-surface-dark transition-colors duration-500`}>
       <Navbar 
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 
@@ -301,6 +303,8 @@ export default function App() {
           }
         }}
         lang={language}
+        isDarkMode={isDarkMode}
+        toggleTheme={() => setIsDarkMode(!isDarkMode)}
       />
       
       <main>
