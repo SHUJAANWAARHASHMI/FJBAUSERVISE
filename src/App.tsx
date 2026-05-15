@@ -20,6 +20,7 @@ import Footer from './components/Footer';
 import ProjectGallery from './components/ProjectGallery';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
+import SEO from './components/SEO';
 import { supabase } from './lib/supabase';
 
 import { translations } from './lib/translations';
@@ -59,9 +60,7 @@ interface Project {
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [language, setLanguage] = useState<'en' | 'de'>(
-    (localStorage.getItem('lang') as 'en' | 'de') || 'de'
-  );
+  const language = 'de';
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,12 +83,11 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Persist language
+  // Force language to German
   useEffect(() => {
-    localStorage.setItem('lang', language);
-    document.documentElement.lang = language;
-    document.documentElement.dir = 'ltr'; // German and English are both LTR
-  }, [language]);
+    document.documentElement.lang = 'de';
+    document.documentElement.dir = 'ltr';
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -123,6 +121,10 @@ export default function App() {
       case 'home':
         return (
           <>
+            <SEO 
+              title="Abbruch, Entkernung & Kernbohrung München" 
+              description="Ihr Partner für fachgerechten Abbruch, präzise Kernbohrungen und professionelle Entkernung in München und Rosenheim. Jetzt kostenloses Angebot anfordern!" 
+            />
             <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Services lang={language} setCurrentPage={setCurrentPage} />
             <WhyUs lang={language} />
@@ -134,9 +136,9 @@ export default function App() {
               className="py-24 px-6 max-w-7xl mx-auto space-y-16"
             >
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                <h2 className="heading-dynamic text-5xl md:text-7xl">{t.nav.projects}</h2>
+                <h2 className="heading-dynamic text-4xl sm:text-5xl md:text-7xl">{t.nav.projects}</h2>
                 <p className="text-zinc-500 max-w-md">
-                  {language === 'de' ? 'Hier finden Sie eine Auswahl unserer aktuellsten Projekte und Referenzen.' : 'Here you can find a selection of our most recent projects and references.'}
+                  Hier finden Sie eine Auswahl unserer aktuellsten Projekte und Referenzen in der Region München und Rosenheim.
                 </p>
               </div>
               <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
@@ -147,63 +149,110 @@ export default function App() {
         );
       case 'about':
         return (
-          <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
-            <h1 className="heading-dynamic text-5xl md:text-8xl tracking-tight leading-none">{t.nav.about}</h1>
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
-              <div className="space-y-6 md:space-y-8 text-zinc-400 text-base md:text-lg">
-                <p>
-                  {siteSettings?.name || 'FJ Bauservice'} 
-                  {language === 'de' 
-                    ? ` ist ein professionelles Unternehmen${siteSettings?.address_de || siteSettings?.address ? ` mit Sitz in ${(siteSettings?.address_de || siteSettings?.address).split(',')[0]}` : ' mit Sitz in Rosenheim'}, das sich auf professionellen Abbruch, Entkernung und Kernbohrungen spezialisiert hat.`
-                    : ` is a professional company${siteSettings?.address_en || siteSettings?.address ? ` based in ${(siteSettings?.address_en || siteSettings?.address).split(',')[0]}` : ' based in Rosenheim'}, specializing in professional demolition, gutting and core drilling.`}
-                </p>
-                <p>
-                  {language === 'de' ? 'Unter dem Motto' : 'Under the motto'} "{language === 'en' ? (siteSettings?.slogan_en || t.nav.offer) : (siteSettings?.slogan_de || siteSettings?.slogan || 'Raum für Neues schaffen')}" 
-                  {language === 'de' 
-                    ? ' führen wir Projekte mit höchster Präzision und Zuverlässigkeit aus. Unser Team steht für Qualität, Termintreue und saubere Ausführung bei jedem Auftrag.'
-                    : ' we execute projects with the highest precision and reliability. Our team stands for quality, punctuality and clean execution on every job.'}
-                </p>
+          <>
+            <SEO 
+              title="Über Uns | FJ BAUSERVICE Rosenheim" 
+              description="Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb für Rückbau und Sanierungsvorbereitung. Qualität und Termintreue seit Jahren." 
+            />
+            <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
+              <div className="space-y-8 max-w-4xl">
+                 <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Unsere Geschichte</span>
+                 <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-white">Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span></h1>
               </div>
-              <div className="aspect-[16/10] bg-surface-card border border-surface-border overflow-hidden">
-                <img 
-                  src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
-                  alt="Team" 
-                  className="w-full h-full object-cover opacity-60"
-                  referrerPolicy="no-referrer"
-                />
+
+              <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
+                <div className="space-y-10 text-zinc-400 text-lg md:text-xl font-medium leading-relaxed">
+                  <p className="text-white text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
+                    "Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."
+                  </p>
+                  <p>
+                    {siteSettings?.name || 'FJ Bauservice'} ist ein inhabergeführter Fachbetrieb mit Sitz in Rosenheim. Wir sind spezialisiert auf komplexe Rückbau-Herausforderungen, präzise Kernbohrungen und fachgerechte Entkernung im gesamten Raum München und Oberbayern.
+                  </p>
+                  <p>
+                    Unser Anspruch ist absolute Termintreue und eine saubere, sichere Baustelle. Wir verstehen uns als Partner von Architekten, Bauherren und Kommunen, die Wert auf höchste Qualität und professionelle Abwicklung legen.
+                  </p>
+                  <div className="pt-8 flex flex-wrap gap-12 border-t border-white/5">
+                    <div>
+                      <span className="block text-4xl font-black text-primary italic leading-none">15+</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Jahre Erfahrung</span>
+                    </div>
+                    <div>
+                      <span className="block text-4xl font-black text-primary italic leading-none">500+</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Projekte</span>
+                    </div>
+                    <div>
+                      <span className="block text-4xl font-black text-primary italic leading-none">100%</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-2 block">Termintreue</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative group">
+                  <div className="aspect-[3/4] bg-surface-card border border-surface-border overflow-hidden shadow-2xl relative z-10">
+                    <img 
+                      src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
+                      alt="FJ BAUSERVICE Fachbetrieb am Bau" 
+                      className="w-full h-full object-cover opacity-60 filter grayscale brightness-75 group-hover:scale-110 transition-transform duration-1000"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-20 -z-10 group-hover:scale-110 transition-transform duration-700" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-primary/20 -z-10 animate-pulse" />
+                </div>
               </div>
-            </div>
-            <div className="pt-8">
-                <button onClick={() => setCurrentPage('contact')} className="button-primary w-full md:w-auto justify-center">
-                  {t.nav.offer}
-                </button>
-            </div>
-          </section>
+
+              <div className="pt-12 text-center md:text-left">
+                  <button onClick={() => setCurrentPage('contact')} className="button-primary px-16 py-8 transition-all hover:shadow-[10px_10px_0px_0px_white] active:translate-y-2">
+                    Unverbindliches Angebot einholen
+                  </button>
+              </div>
+            </section>
+          </>
         );
       case 'services':
         return (
-          <div className="pt-10">
+          <div className="pt-20">
+            <SEO 
+              title="Unsere Leistungen | Abbruch, Entkernung, Kernbohrung" 
+              description="Alle Leistungen von FJ BAUSERVICE im Überblick: Professioneller Abbruch, Entkernung, Sanierung und Kernbohrung in München und Rosenheim." 
+            />
             <Services lang={language} setCurrentPage={setCurrentPage} />
           </div>
         );
       case 'projects':
         return (
-          <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
-            <div className="space-y-4">
-              <h1 className="heading-dynamic text-5xl md:text-8xl italic leading-none">{t.nav.projects}</h1>
-              <p className="text-zinc-500 max-w-xl text-sm md:text-base">
-                {language === 'de' ? 'Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte.' : 'An insight into our successfully completed demolition and dismantling projects.'}
+          <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
+            <SEO 
+              title="Referenzen | Unsere Projekte in München & Rosenheim" 
+              description="Sehen Sie unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte. Qualität und Professionalität in jedem Schritt." 
+            />
+            <div className="space-y-8 max-w-4xl">
+              <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Projektarchiv</span>
+              <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-white">Unsere<br /><span className="text-primary not-italic font-black">Werke.</span></h1>
+              <p className="text-zinc-500 max-w-2xl text-base md:text-lg font-medium leading-relaxed">
+                Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte für gewerbliche und private Kunden in ganz Bayern.
               </p>
             </div>
             <ProjectGallery projects={projects} lang={language} />
           </section>
         );
       case 'contact':
-        return <Contact settings={siteSettings} lang={language} />;
+        return (
+          <>
+            <SEO 
+              title="Kontakt | Jetzt Angebot für Abbruch anfordern" 
+              description="Kontaktieren Sie FJ BAUSERVICE für Ihre Abbruch- oder Sanierungsarbeiten. Wir beraten Sie kostenlos vor Ort in München und Rosenheim." 
+            />
+            <Contact settings={siteSettings} lang={language} />
+          </>
+        );
       case 'legal':
         return (
           <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto space-y-12">
-            <h1 className="heading-dynamic text-6xl">Legal Information</h1>
+            <SEO 
+              title="Impressum & Datenschutz | FJ BAUSERVICE" 
+              description="Rechtliche Informationen und Datenschutzbestimmungen von FJ BAUSERVICE." 
+            />
+            <h1 className="heading-dynamic text-6xl">Rechtliches</h1>
             <div className="prose prose-invert max-w-none space-y-8 text-zinc-400">
               <div>
                 <h2 className="text-xl font-bold text-white uppercase">{t.footer.impressum}</h2>
@@ -252,7 +301,6 @@ export default function App() {
           }
         }}
         lang={language}
-        setLang={setLanguage}
       />
       
       <main>

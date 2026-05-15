@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, ArrowRight, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 import { translations } from '../lib/translations';
 
@@ -10,12 +10,20 @@ interface NavbarProps {
   settings: any;
   onAdminTrigger: () => void;
   lang: 'en' | 'de';
-  setLang: (lang: 'en' | 'de') => void;
 }
 
-export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang, setLang }: NavbarProps) {
+export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [clickCount, setClickCount] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const t = translations[lang];
 
@@ -40,54 +48,51 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
   ];
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-surface-dark/90 backdrop-blur-md border-b border-surface-border">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
+      isScrolled ? 'bg-surface-dark/90 backdrop-blur-md h-16 border-white/10' : 'bg-transparent h-24 border-transparent'
+    }`}>
+      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
         <div 
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group"
           onClick={handleLogoClick}
         >
-          <div className="bg-primary text-black font-black w-10 h-10 flex items-center justify-center text-xl">
+          <div className="bg-primary text-black font-black w-10 h-10 flex items-center justify-center text-xl shadow-[4px_4px_0px_0px_white]">
             {settings?.name?.substring(0, 2) || 'FJ'}
           </div>
-          <span className="heading-dynamic text-xl tracking-normal group-hover:text-primary transition-colors">
-            {settings?.name || 'BAUSERVICE'}
-          </span>
+          <div className="flex flex-col -space-y-1">
+            <span className="heading-dynamic text-xl tracking-tight leading-none group-hover:text-primary transition-colors">
+              {settings?.name || 'FJ BAUSERVICE'}
+            </span>
+          </div>
         </div>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-10">
           {navLinks.map((link) => (
             <button
               key={link.id}
               onClick={() => setCurrentPage(link.id)}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary relative group ${
                 currentPage === link.id ? 'text-primary' : 'text-zinc-400'
               }`}
             >
               {link.label}
+              <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${currentPage === link.id ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </button>
           ))}
-          <div className="h-6 w-px bg-surface-border mx-2" />
-          <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border">
-            <button 
-              onClick={() => setLang('en')}
-              className={`px-2 py-0.5 text-xs font-bold rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
-            >
-              EN
-            </button>
-            <button 
-              onClick={() => setLang('de')}
-              className={`px-2 py-0.5 text-xs font-bold rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
-            >
-              DE
-            </button>
-          </div>
+          <div className="h-4 w-px bg-surface-border mx-2" />
+          <button 
+            onClick={onAdminTrigger}
+            className="text-zinc-600 hover:text-primary transition-colors hover:bg-white/5 p-2 rounded-full"
+          >
+            <Lock size={16} />
+          </button>
           <button 
             onClick={() => setCurrentPage('contact')}
-            className="button-primary ml-4"
+            className="button-primary px-8"
           >
-            {t.nav.offer} <ArrowRight size={16} />
+            {t.nav.offer} <ArrowRight size={14} strokeWidth={3} />
           </button>
         </div>
 
@@ -135,29 +140,14 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               </div>
 
               <div className="mt-auto space-y-6">
-                <div className="flex items-center gap-2 bg-surface-card p-1 rounded-sm border border-surface-border">
-                  <button 
-                    onClick={() => setLang('en')}
-                    className={`flex-1 px-4 py-2 text-xs font-black rounded-sm transition-all ${lang === 'en' ? 'bg-primary text-black' : 'text-zinc-500'}`}
-                  >
-                    ENGLISH
-                  </button>
-                  <button 
-                    onClick={() => setLang('de')}
-                    className={`flex-1 px-4 py-2 text-xs font-black rounded-sm transition-all ${lang === 'de' ? 'bg-primary text-black' : 'text-zinc-500'}`}
-                  >
-                    GERMAN
-                  </button>
-                </div>
-
                 <button 
                   onClick={() => {
                     setCurrentPage('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="button-primary w-full justify-center py-4"
+                  className="button-primary w-full justify-center py-5"
                 >
-                  {t.nav.offer} <ArrowRight size={20} />
+                  {t.nav.offer} <ArrowRight size={20} strokeWidth={3} />
                 </button>
               </div>
             </motion.div>

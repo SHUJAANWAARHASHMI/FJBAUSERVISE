@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Facebook, Instagram, Linkedin } from 'lucide-react';
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-
 import { translations } from '../lib/translations';
 
 export default function Contact({ settings, lang }: { settings: any, lang: 'en' | 'de' }) {
@@ -19,7 +18,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
-      setErrorMessage(lang === 'de' ? 'Bitte füllen Sie alle Pflichtfelder aus.' : 'Please fill in all required fields.');
+      setErrorMessage('Bitte füllen Sie alle Pflichtfelder aus.');
       setStatus('error');
       return;
     }
@@ -47,7 +46,7 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
       setTimeout(() => setStatus('idle'), 5000);
     } catch (err: any) {
       console.error('Supabase error:', err);
-      setErrorMessage(err.message || (lang === 'de' ? 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.' : 'An error occurred. Please try again later.'));
+      setErrorMessage(err.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
       setStatus('error');
     }
   };
@@ -57,76 +56,58 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
   };
 
   return (
-    <section className="py-24 px-6 max-w-7xl mx-auto bg-surface-card border-x border-surface-border">
-      <div className="grid lg:grid-cols-2 gap-16">
+    <section className="py-32 px-6 max-w-7xl mx-auto bg-surface-dark overflow-hidden">
+      <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
         {/* Left Column */}
         <motion.div 
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="space-y-12"
+          className="space-y-16"
         >
-          <div className="space-y-6">
-            <h2 className="heading-dynamic text-6xl">{t.contact.title}</h2>
-            <p className="text-zinc-400 text-lg">
-              {lang === 'de' ? (settings?.description_de || settings?.description || t.contact.subtitle) : (settings?.description_en || settings?.description || t.contact.subtitle)}
+          <div className="space-y-8">
+            <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Bereit für Ihr Projekt?</span>
+            <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-white leading-[1.1] md:leading-none">{t.contact.title}</h2>
+            <p className="text-zinc-400 text-base md:text-xl font-medium max-w-lg leading-relaxed">
+              Planen Sie einen Abbruch in München oder eine Sanierung in Rosenheim? Unser Expertenteam steht Ihnen für eine kostenlose Erstberatung und Besichtigung zur Verfügung.
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-primary flex items-center justify-center shrink-0">
-                <Phone className="text-black" size={24} />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-10">
+            <div className="flex gap-6 group">
+              <div className="w-16 h-16 bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-black transition-all duration-500">
+                <Phone size={28} strokeWidth={1.5} />
               </div>
-              <div>
-                <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest block mb-1">{t.contact.call}</span>
-                <span className="text-xl font-bold">{settings?.phone || '0159 06142923'}</span>
+              <div className="space-y-1">
+                <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2">{t.contact.call}</span>
+                <a href={`tel:${(settings?.phone || '015906142923').replace(/\s+/g, '')}`} className="text-xl md:text-2xl font-black text-white hover:text-primary transition-colors block">{settings?.phone || '+49 159 06142923'}</a>
               </div>
             </div>
             
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-primary flex items-center justify-center shrink-0">
-                <Mail className="text-black" size={24} />
+            <div className="flex gap-6 group">
+              <div className="w-16 h-16 bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-black transition-all duration-500">
+                <Mail size={28} strokeWidth={1.5} />
               </div>
-              <div>
-                <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest block mb-1">{t.contact.email}</span>
-                <span className="text-xl font-bold underline decoration-primary decoration-2 underline-offset-4">{settings?.email || 'amjad.ali@fj-bauservice.com'}</span>
+              <div className="space-y-1">
+                <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2 font-display">{t.contact.email}</span>
+                <a href={`mailto:${settings?.email || 'amjad.ali@fj-bauservice.com'}`} className="text-xl md:text-2xl font-black text-white hover:text-primary transition-colors block break-all">{settings?.email || 'amjad.ali@fj-bauservice.com'}</a>
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-primary flex items-center justify-center shrink-0">
-                <MapPin className="text-black" size={24} />
+            <div className="flex gap-6 group">
+              <div className="w-16 h-16 bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-black transition-all duration-500">
+                <MapPin size={28} strokeWidth={1.5} />
               </div>
-              <div>
-                <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest block mb-1">{t.contact.address}</span>
-                <span className="text-xl font-bold">{(lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
+              <div className="space-y-1">
+                <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] block mb-2">{t.contact.address}</span>
+                <span className="text-xl md:text-2xl font-black text-white">{settings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}</span>
               </div>
             </div>
-          </div>
-
-          {/* Social Icons */}
-          <div className="pt-4 flex gap-4">
-            {[
-              { Icon: Facebook, url: settings?.facebook_url },
-              { Icon: Instagram, url: settings?.instagram_url },
-              { Icon: Linkedin, url: settings?.linkedin_url }
-            ].filter(s => s.url).map(({ Icon, url }, idx) => (
-              <a 
-                key={idx} 
-                href={url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="w-12 h-12 border border-surface-border flex items-center justify-center text-white hover:bg-primary hover:text-black transition-all"
-              >
-                <Icon size={20} />
-              </a>
-            ))}
           </div>
 
           {/* Mini Map */}
-          <div className="h-64 bg-surface-dark border border-surface-border overflow-hidden">
+          <div className="h-64 bg-surface-dark border border-surface-border overflow-hidden group shadow-2xl relative">
             {settings?.google_maps_url || settings?.address || settings?.address_de ? (
               <iframe 
                 src={(() => {
@@ -138,15 +119,14 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                   } else if (val.startsWith('http')) {
                     baseUrl = val;
                   } else {
-                    const queryAddress = (lang === 'de' ? settings?.address_de : settings?.address_en) || settings?.address || 'Rosenheim, Germany';
+                    const queryAddress = settings?.address_de || settings?.address || 'Rosenheim, Germany';
                     baseUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
                   }
 
-                  // Force the language (hl parameter)
                   if (baseUrl.includes('?')) {
-                    return baseUrl.includes('hl=') ? baseUrl.replace(/hl=[a-z]{2}/, `hl=${lang}`) : `${baseUrl}&hl=${lang}`;
+                    return baseUrl.includes('hl=') ? baseUrl.replace(/hl=[a-z]{2}/, `hl=de`) : `${baseUrl}&hl=de`;
                   }
-                  return `${baseUrl}?hl=${lang}`;
+                  return `${baseUrl}?hl=de`;
                 })()} 
                 width="100%" 
                 height="100%" 
@@ -158,9 +138,10 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
               ></iframe>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
-                Google Maps Dynamic View
+                Google Maps View
               </div>
             )}
+            <div className="absolute inset-0 pointer-events-none border-[12px] border-surface-dark" />
           </div>
         </motion.div>
 
@@ -170,67 +151,71 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-surface-dark p-10 border border-surface-border relative overflow-hidden"
+          className="bg-surface-card p-8 md:p-14 border border-surface-border relative shadow-[20px_20px_0px_0px_rgba(255,117,31,0.1)]"
         >
-          <form className="space-y-8" onSubmit={handleSubmit}>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t.contact.form.name} *</label>
+          <form className="space-y-10" onSubmit={handleSubmit}>
+            <div className="grid md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">{t.contact.form.name} *</label>
                 <input 
                   type="text" 
                   name="name"
+                  placeholder="Ihr voller Name"
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full bg-surface-card border-b border-surface-border py-3 focus:outline-none focus:border-primary transition-colors text-white" 
+                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t.contact.form.email} *</label>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">{t.contact.form.email} *</label>
                 <input 
                   type="email" 
                   name="email"
+                  placeholder="name@beispiel.de"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full bg-surface-card border-b border-surface-border py-3 focus:outline-none focus:border-primary transition-colors text-white" 
+                  className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t.contact.form.subject}</label>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">{t.contact.form.subject}</label>
               <input 
                 type="text" 
                 name="subject"
+                placeholder="z.B. Abbruch München Projekt"
                 value={formData.subject}
                 onChange={handleChange}
-                className="w-full bg-surface-card border-b border-surface-border py-3 focus:outline-none focus:border-primary transition-colors text-white" 
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t.contact.form.message} *</label>
-              <textarea 
-                rows={4}
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                required
-                className="w-full bg-surface-card border-b border-surface-border py-3 focus:outline-none focus:border-primary transition-colors text-white resize-none" 
+                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold" 
               />
             </div>
 
             <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">{t.contact.form.message} *</label>
+              <textarea 
+                rows={5}
+                name="message"
+                placeholder="Bitte beschreiben Sie Ihr Vorhaben..."
+                value={formData.message}
+                onChange={handleChange}
+                required
+                className="w-full bg-white/5 border border-white/10 p-4 focus:outline-none focus:border-primary transition-colors text-white font-bold resize-none" 
+              />
+            </div>
+
+            <div className="space-y-6">
               <button 
                 type="submit" 
                 disabled={status === 'loading'}
-                className="button-primary w-full justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button-primary w-full justify-center group py-6 text-base"
               >
                 {status === 'loading' ? (
-                  <Loader2 className="animate-spin" size={18} />
+                  <Loader2 className="animate-spin" size={24} />
                 ) : (
-                  <>{t.contact.form.send} <Send className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={18} /></>
+                  <>{t.contact.form.send} <Send className="group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" size={20} strokeWidth={3} /></>
                 )}
               </button>
 
@@ -240,9 +225,9 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center gap-2 text-green-500 font-bold text-sm uppercase tracking-wider"
+                    className="flex items-center gap-3 text-green-500 font-black text-xs uppercase tracking-[0.2em] bg-green-500/10 p-4 border border-green-500/20"
                   >
-                    <CheckCircle2 size={16} /> {t.contact.form.success}
+                    <CheckCircle2 size={18} /> {t.contact.form.success}
                   </motion.div>
                 )}
                 {status === 'error' && (
@@ -250,15 +235,24 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center gap-2 text-red-500 font-bold text-sm uppercase tracking-wider"
+                    className="flex items-center gap-3 text-red-500 font-black text-xs uppercase tracking-[0.2em] bg-red-500/10 p-4 border border-red-500/20"
                   >
-                    <AlertCircle size={16} /> {errorMessage || t.contact.form.error}
+                    <AlertCircle size={18} /> {errorMessage || t.contact.form.error}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </form>
         </motion.div>
+      </div>
+      
+      {/* Social Icons Overlay - Optional Premium Touch */}
+      <div className="mt-20 flex justify-center gap-8 border-t border-white/5 pt-12">
+        {[Facebook, Instagram, Linkedin].map((Icon, i) => (
+          <a key={i} href="#" className="text-zinc-600 hover:text-primary transition-colors duration-500">
+            <Icon size={24} strokeWidth={1} />
+          </a>
+        ))}
       </div>
     </section>
   );

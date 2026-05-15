@@ -5,133 +5,103 @@ export const translations = {
       home: 'Startseite',
       about: 'Über Uns',
       services: 'Leistungen',
-      projects: 'Projekte',
+      projects: 'Referenzen',
       contact: 'Kontakt',
       offer: 'Angebot anfordern'
     },
     hero: {
-      badge: 'Expertise in Deutschland',
-      trust: 'VERTRAUEN',
+      badge: 'Fachbetrieb für München & Rosenheim',
+      trust: 'QUALITÄT',
       stats: {
-        experience: 'Jahre Erfahrung',
-        projects: 'Abgeschlossene Projekte',
-        contact: 'Jetzt Kontaktieren'
+        experience: 'Jahre Fachkompetenz',
+        projects: 'Erfolgreiche Projekte',
+        contact: 'Kostenlose Beratung'
       }
     },
     services: {
-      title: 'Unsere Leistungen',
-      all: 'Alle Projekte',
+      title: 'Unsere Expertise',
+      subtitle: 'Professionelle Baudienstleistungen für München und Bayern',
+      all: 'Alle Leistungen',
       items: [
-        { id: '01', title: 'Abbrucharbeiten', desc: 'Fachgerechter Abbruch von Wänden und Gebäudeteilen mit moderner Ausrüstung.' },
-        { id: '02', title: 'Kernbohrungen', desc: 'Präzise Bohrungen in Beton, Mauerwerk und Naturstein für Installationen.' },
-        { id: '03', title: 'Entkernung', desc: 'Vorbereitung von Sanierungsobjekten durch fachmännische Entkernung.' },
-        { id: '04', title: 'Rückbau', desc: 'Umweltgerechter Rückbau von Industrie- und Gewerbeanlagen.' }
+        { 
+          id: '01', 
+          title: 'Abbruch', 
+          slug: 'abbruch',
+          desc: 'Fachgerechter Abbruch von Gebäuden und Gebäudeteilen in München. Wir sorgen für einen sicheren und sauberen Rückbau Ihrer Projekte.',
+          seoTitle: 'Abbruch München & Rosenheim | Professioneller Rückbau',
+          seoDesc: 'Suchen Sie Experten für Abbruch in München? FJ BAUSERVICE ist Ihr Partner für sicheren Rückbau und fachgerechte Abbrucharbeiten.'
+        },
+        { 
+          id: '02', 
+          title: 'Entkernung', 
+          slug: 'entkernung',
+          desc: 'Präzise Entkernung als Vorbereitung für Ihre Sanierung. Wir entfernen alle nicht tragenden Bauteile termin- und fachgerecht.',
+          seoTitle: 'Entkernung München | Fachgerechte Gebäudevorbereitung',
+          seoDesc: 'Professionelle Entkernung in München und Rosenheim. Wir bereiten Ihr Objekt optimal für die anschließende Sanierung vor.'
+        },
+        { 
+          id: '03', 
+          title: 'Kernbohrung', 
+          slug: 'kernbohrung',
+          desc: 'Präzise Kernbohrungen in Beton und Mauerwerk für Leitungen, Kabel und Belüftungen. Sauber, schnell und erschütterungsfrei.',
+          seoTitle: 'Kernbohrung Rosenheim & München | Präzision in Beton',
+          seoDesc: 'Exakte Kernbohrungen für Gewerbe und Privat. Wir bohren in Beton und Stein mit modernster Technik in Rosenheim und München.'
+        },
+        { 
+          id: '04', 
+          title: 'Sanierung', 
+          slug: 'sanierung',
+          desc: 'Vorbereitende Maßnahmen für die energetische und strukturelle Sanierung Ihrer Immobilie in der Region Rosenheim.',
+          seoTitle: 'Sanierungsvorbereitung | Fachbetrieb Rosenheim',
+          seoDesc: 'Spezialisiert auf die Vorbereitung von Sanierungen. Wir schaffen die Basis für modernes Wohnen und Arbeiten.'
+        },
+        { 
+          id: '05', 
+          title: 'Rückbau', 
+          slug: 'rueckbau',
+          desc: 'Umweltgerechter Rückbau von Industrieanlagen und Wohngebäuden. Wir kümmern uns um die fachgerechte Entsorgung.',
+          seoTitle: 'Rückbau München | Nachhaltig & Fachgerecht',
+          seoDesc: 'Nachhaltiger Rückbau in München. FJ BAUSERVICE garantiert Professionalität und Umweltbewusstsein bei jedem Projekt.'
+        }
       ]
     },
     whyUs: {
-      title: 'Warum FJ Bauservice?',
-      subtitle: 'Weil Qualität keine Zufälle kennt. Wir setzen auf Präzision, Schnelligkeit und Zuverlässigkeit bei jedem Projekt.',
+      title: 'Warum FJ BAUSERVICE?',
+      subtitle: 'Präzision, Termintreue und Transparenz sind die Grundpfeiler unserer Arbeit in München und Rosenheim.',
       points: [
-        { title: 'Zertifizierter Fachbetrieb', desc: 'Wir erfüllen alle gesetzlichen Auflagen und Sicherheitsstandards.' },
-        { title: 'Moderner Maschinenpark', desc: 'Effizientes Arbeiten durch High-Tech-Ausrüstung.' },
-        { title: 'Termintreue Garantie', desc: 'Wir halten unsere Fristen – ohne Wenn und Aber.' }
+        { title: 'Regionale Expertise', desc: 'Tief verwurzelt in München und Rosenheim kennen wir die lokalen Anforderungen.' },
+        { title: 'Moderne Technik', desc: 'Wir nutzen modernste Equipment für emissionsarmen Abbruch und präzise Kernbohrungen.' },
+        { title: 'Zertifizierte Sicherheit', desc: 'Höchste Sicherheitsstandards beim Rückbau und der Entkernung Ihrer Objekte.' }
       ]
     },
     contact: {
-      title: 'Kontakt',
-      subtitle: 'Haben Sie ein Projekt im Kopf? Lassen Sie uns darüber sprechen. Unser Expertenteam berät Sie gerne.',
-      call: 'Rufen Sie uns an',
-      email: 'Email',
-      address: 'Adresse',
+      title: 'Ihr Partner vor Ort',
+      subtitle: 'Planen Sie einen Abbruch oder eine Sanierung? Kontaktieren Sie uns für eine kostenlose Besichtigung in München oder Rosenheim.',
+      call: 'Telefon',
+      email: 'E-Mail',
+      address: 'Standort',
       form: {
-        name: 'Name',
-        email: 'Email',
-        subject: 'Betreff',
-        message: 'Nachricht',
-        send: 'Nachricht Senden',
-        success: 'Nachricht erfolgreich gesendet!',
-        error: 'Ein Fehler ist aufgetreten.'
+        name: 'Ihr Name',
+        email: 'Ihre E-Mail',
+        subject: 'Anliegen (z.B. Abbruch München)',
+        message: 'Ihre Nachricht',
+        send: 'Anfrage senden',
+        success: 'Vielen Dank! Wir melden uns zeitnah bei Ihnen.',
+        error: 'Entschuldigung, es gab ein Problem. Bitte versuchen Sie es erneut.'
       }
     },
     footer: {
-      quickLinks: 'Quick Links',
+      quickLinks: 'Navigation',
       contact: 'Kontakt',
       legal: 'Rechtliches',
       impressum: 'Impressum',
       privacy: 'Datenschutz',
-      faq: 'FAQ'
+      faq: 'Häufige Fragen'
     },
     cta: {
-      title: 'Bereit für den nächsten Schritt?',
-      subtitle: 'Kontaktieren Sie uns noch heute für ein unverbindliches Erstgespräch und ein kostenloses Angebot.',
-      button: 'Kontakt aufnehmen'
-    }
-  },
-  en: {
-    nav: {
-      home: 'Home',
-      about: 'About Us',
-      services: 'Services',
-      projects: 'Projects',
-      contact: 'Contact',
-      offer: 'Get an Offer'
-    },
-    hero: {
-      badge: 'Expertise in Germany',
-      trust: 'TRUST',
-      stats: {
-        experience: 'Years Experience',
-        projects: 'Completed Projects',
-        contact: 'Contact Now'
-      }
-    },
-    services: {
-      title: 'Our Services',
-      all: 'All Services',
-      items: [
-        { id: '01', title: 'Demolition', desc: 'Professional demolition of walls and building parts with modern equipment.' },
-        { id: '02', title: 'Core Drilling', desc: 'Precise drilling in concrete, masonry and natural stone for installations.' },
-        { id: '03', title: 'Gutting', desc: 'Preparation of renovation objects through professional gutting.' },
-        { id: '04', title: 'Dismantling', desc: 'Environmentally friendly dismantling of industrial and commercial plants.' }
-      ]
-    },
-    whyUs: {
-      title: 'Why FJ Bauservice?',
-      subtitle: 'Because quality knows no coincidences. We focus on precision, speed and reliability in every project.',
-      points: [
-        { title: 'Certified Specialist Company', desc: 'We comply with all legal requirements and safety standards.' },
-        { title: 'Modern Machinery', desc: 'Efficient work through high-tech equipment.' },
-        { title: 'On-time Guarantee', desc: 'We stick to our deadlines – no ifs, ands, or buts.' }
-      ]
-    },
-    contact: {
-      title: 'Contact',
-      subtitle: 'Have a project in mind? Let\'s talk about it. Our expert team will be happy to advise you.',
-      call: 'Call us',
-      email: 'Email',
-      address: 'Address',
-      form: {
-        name: 'Name',
-        email: 'Email',
-        subject: 'Subject',
-        message: 'Message',
-        send: 'Send Message',
-        success: 'Message sent successfully!',
-        error: 'An error occurred.'
-      }
-    },
-    footer: {
-      quickLinks: 'Quick Links',
-      contact: 'Contact',
-      legal: 'Legal',
-      impressum: 'Imprint',
-      privacy: 'Privacy Policy',
-      faq: 'FAQ'
-    },
-    cta: {
-      title: 'Ready for the next step?',
-      subtitle: 'Contact us today for a non-binding initial consultation and a free offer.',
-      button: 'Contact Us'
+      title: 'Bereit für Ihr Bauvorhaben?',
+      subtitle: 'Fordern Sie jetzt Ihr unverbindliches Angebot für Abbruch, Entkernung oder Kernbohrung an.',
+      button: 'Jetzt Angebot anfordern'
     }
   }
 };

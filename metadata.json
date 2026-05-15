@@ -1,12 +1,10 @@
 {
-  "name": "FJ BAUSERVICE - Raum für Neues schaffen",
-  "description": "Professionelle Abbrucharbeiten, Entkernung und Kernbohrungen in Rosenheim und ganz Deutschland.",
+  "name": "FJ BAUSERVICE | Abbruch, Entkernung & Kernbohrung München",
+  "description": "FJ BAUSERVICE: Ihr Experte für professionellen Abbruch, Entkernung, Sanierung und Kernbohrung in München und Rosenheim. Termin- und fachgerechter Rückbau.",
   "requestFramePermissions": [
     "geolocation"
   ],
   "majorCapabilities": [
-    "Construction Services",
-    "Project Showcase",
-    "Inquiry System"
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }
