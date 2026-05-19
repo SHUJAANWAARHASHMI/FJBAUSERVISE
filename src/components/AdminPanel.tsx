@@ -585,48 +585,6 @@ export default function AdminPanel({ onClose, settings, projects, refreshData, l
                 </div>
 
                 <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Social Media Links' : 'Social Media Links'}</h4>
-                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">Facebook URL</label>
-                      <input 
-                        type="text" value={settingsForm.facebook_url || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, facebook_url: e.target.value})}
-                        placeholder="https://facebook.com/..."
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">Instagram URL</label>
-                      <input 
-                        type="text" value={settingsForm.instagram_url || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, instagram_url: e.target.value})}
-                        placeholder="https://instagram.com/..."
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">WhatsApp (Number only)</label>
-                      <input 
-                        type="text" value={settingsForm.whatsapp_number || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, whatsapp_number: e.target.value})}
-                        placeholder="+49 123 456789"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">LinkedIn URL</label>
-                      <input 
-                        type="text" value={settingsForm.linkedin_url || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, linkedin_url: e.target.value})}
-                        placeholder="https://linkedin.com/..."
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
                   <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
                   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-3 md:space-y-4">

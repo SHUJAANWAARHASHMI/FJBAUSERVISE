@@ -111,7 +111,7 @@ export default function App() {
     fetchData();
   }, []);
 
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Sync theme with document class
   useEffect(() => {
@@ -312,8 +312,6 @@ export default function App() {
           }
         }}
         lang={language}
-        isDarkMode={isDarkMode}
-        toggleTheme={() => setIsDarkMode(!isDarkMode)}
       />
       
       <main>

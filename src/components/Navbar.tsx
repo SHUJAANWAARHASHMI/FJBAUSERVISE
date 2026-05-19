@@ -10,11 +10,9 @@ interface NavbarProps {
   settings: any;
   onAdminTrigger: () => void;
   lang: 'en' | 'de';
-  isDarkMode: boolean;
-  toggleTheme: () => void;
 }
 
-export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang, isDarkMode, toggleTheme }: NavbarProps) {
+export default function Navbar({ currentPage, setCurrentPage, settings, onAdminTrigger, lang }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [clickCount, setClickCount] = useState(0);
@@ -95,13 +93,6 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           ))}
           <div className="h-4 w-px bg-surface-border mx-2" />
           <button 
-            onClick={toggleTheme}
-            className="p-2 text-text-main hover:text-primary transition-colors"
-            title={isDarkMode ? "Light Mode" : "Dark Mode"}
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-          <button 
             onClick={() => setCurrentPage('contact')}
             className="button-primary px-8"
           >
@@ -111,12 +102,6 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
 
         {/* Mobile Toggle */}
         <div className="flex items-center gap-4 md:hidden">
-          <button 
-            onClick={toggleTheme}
-            className="p-2 text-text-main hover:text-primary transition-colors"
-          >
-            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
-          </button>
           <button 
             className="text-text-main"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

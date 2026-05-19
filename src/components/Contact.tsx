@@ -246,14 +246,6 @@ export default function Contact({ settings, lang }: { settings: any, lang: 'en' 
         </motion.div>
       </div>
       
-      {/* Social Icons Overlay - Optional Premium Touch */}
-      <div className="mt-20 flex justify-center gap-8 border-t border-surface-border pt-12">
-        {[Facebook, Instagram, Linkedin].map((Icon, i) => (
-          <a key={i} href="#" className="text-text-muted hover:text-primary transition-colors duration-500">
-            <Icon size={24} strokeWidth={1} />
-          </a>
-        ))}
-      </div>
     </section>
   );
 }

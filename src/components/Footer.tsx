@@ -48,24 +48,6 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
           <p className="text-text-muted text-base leading-relaxed max-w-sm font-medium">
             Ihr Partner für Abbruch, Entkernung und Sanierung in München und Rosenheim. Wir schaffen seit über 15 Jahren Raum für Neues – professionell, sicher und fachgerecht.
           </p>
-          <div className="flex gap-6">
-            {[
-              { Icon: Facebook, url: settings?.facebook_url || '#', label: 'Facebook' },
-              { Icon: Instagram, url: settings?.instagram_url || '#', label: 'Instagram' },
-              { Icon: Linkedin, url: settings?.linkedin_url || '#', label: 'LinkedIn' }
-            ].map(({ Icon, url, label }, index) => (
-              <a 
-                key={index} 
-                href={url} 
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="w-12 h-12 rounded-sm border border-surface-border flex items-center justify-center text-text-main hover:bg-primary hover:text-black hover:border-primary transition-all duration-300"
-              >
-                <Icon size={20} />
-              </a>
-            ))}
-          </div>
         </div>
 
         <div className="md:col-span-2 space-y-8">
