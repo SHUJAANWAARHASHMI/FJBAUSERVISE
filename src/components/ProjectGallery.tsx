@@ -102,9 +102,10 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
               >
                 <img
                   src={project.image_url}
-                  alt={`${project.title_de || project.title} - FJ BAUSERVICE Referenz`}
+                  alt={`${project.title_de || project.title} - FJ BAUSERVICE Referenz - Abbruch München`}
                   className="absolute inset-0 w-full h-full object-cover opacity-40 filter grayscale brightness-75 group-hover:scale-110 group-hover:opacity-60 transition-all duration-1000"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                 />
                 
                 <div className="absolute inset-0 p-10 flex flex-col justify-end gap-6 bg-gradient-to-t from-surface-dark via-surface-dark/40 to-transparent">

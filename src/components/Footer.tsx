@@ -82,6 +82,20 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
         </div>
 
         <div className="md:col-span-3 space-y-8">
+          <h4 className="text-xs font-black italic uppercase tracking-[0.3em] text-primary underline decoration-2 underline-offset-8 decoration-primary/30 pb-2">Service-Gebiete</h4>
+          <ul className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> München</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Rosenheim</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Miesbach</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Wasserburg</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Holzkirchen</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Bad Aibling</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Starnberg</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 bg-primary" /> Dachau</li>
+          </ul>
+        </div>
+
+        <div className="md:col-span-3 space-y-8">
           <h4 className="text-xs font-black italic uppercase tracking-[0.3em] text-primary underline decoration-2 underline-offset-8 decoration-primary/30 pb-2">Rechtliches</h4>
           <ul className="space-y-4 text-xs text-text-muted font-bold uppercase tracking-widest">
             <li><button onClick={() => setCurrentPage('legal')} className="hover:text-text-main transition-colors">{t.footer.impressum}</button></li>

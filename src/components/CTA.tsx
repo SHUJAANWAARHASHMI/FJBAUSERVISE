@@ -16,9 +16,10 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
       >
         <img 
           src={ctaImage} 
-          alt="FJ BAUSERVICE - Rückbau Projekte in München" 
+          alt="FJ BAUSERVICE Rückbau München - Abbrucharbeiten und Fachbetrieb" 
           className="w-full h-full object-cover opacity-10 filter grayscale brightness-50"
           referrerPolicy="no-referrer"
+          loading="lazy"
         />
       </motion.div>
 

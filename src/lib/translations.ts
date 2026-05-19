@@ -10,58 +10,80 @@ export const translations = {
       offer: 'Angebot anfordern'
     },
     hero: {
-      badge: 'Fachbetrieb für München & Rosenheim',
+      badge: 'Fachbetrieb München & Rosenheim',
       trust: 'QUALITÄT',
       stats: {
-        experience: 'Jahre Fachkompetenz',
-        projects: 'Erfolgreiche Projekte',
-        contact: 'Kostenlose Beratung'
+        experience: 'Jahre Facherfahrung',
+        projects: 'Referenzprojekte',
+        contact: 'Gratis Erstberatung'
       }
     },
     services: {
-      title: 'Unsere Expertise',
-      subtitle: 'Professionelle Baudienstleistungen für München und Bayern',
+      title: 'Unsere Leistungen',
+      subtitle: 'Abbruch, Entkernung & Rückbau in München & Rosenheim',
       all: 'Alle Leistungen',
       items: [
         { 
           id: '01', 
-          title: 'Abbruch', 
+          title: 'Abbrucharbeiten', 
           slug: 'abbruch',
-          desc: 'Fachgerechter Abbruch von Gebäuden und Gebäudeteilen in München. Wir sorgen für einen sicheren und sauberen Rückbau Ihrer Projekte.',
-          seoTitle: 'Abbruch München & Rosenheim | Professioneller Rückbau',
-          seoDesc: 'Suchen Sie Experten für Abbruch in München? FJ BAUSERVICE ist Ihr Partner für sicheren Rückbau und fachgerechte Abbrucharbeiten.'
+          desc: 'Professioneller Abbruch von Gebäuden in München. Wir sind Ihr zertifiziertes Abbruchunternehmen für sicheren und sauberen Rückbau von Garagen bis hin zu Bürogebäuden.',
+          seoTitle: 'Abbruch München & Rosenheim | Professionelles Abbruchunternehmen',
+          seoDesc: 'Fachgerechte Abbrucharbeiten in München. Sicherer Rückbau und fachgerechte Entsorgung. Jetzt unverbindliches Angebot für Ihr Abbruchprojekt anfordern!'
         },
         { 
           id: '02', 
-          title: 'Entkernung', 
+          title: 'Gebäudeentkernung', 
           slug: 'entkernung',
-          desc: 'Präzise Entkernung als Vorbereitung für Ihre Sanierung. Wir entfernen alle nicht tragenden Bauteile termin- und fachgerecht.',
-          seoTitle: 'Entkernung München | Fachgerechte Gebäudevorbereitung',
-          seoDesc: 'Professionelle Entkernung in München und Rosenheim. Wir bereiten Ihr Objekt optimal für die anschließende Sanierung vor.'
+          desc: 'Komplette Entkernung zur Sanierungsvorbereitung in München und Rosenheim. Wir entfernen fachgerecht Bodenbeläge, Decken und nicht tragende Wände.',
+          seoTitle: 'Entkernung München | Fachbetrieb für Gebäudevorbereitung',
+          seoDesc: 'Präzise Entkernung in Bayern. Unser Team bereitet Ihr Objekt optimal für die Sanierung vor. Diskret, schnell und zum fairen Preis.'
         },
         { 
           id: '03', 
-          title: 'Kernbohrung', 
+          title: 'Kernbohrungen', 
           slug: 'kernbohrung',
-          desc: 'Präzise Kernbohrungen in Beton und Mauerwerk für Leitungen, Kabel und Belüftungen. Sauber, schnell und erschütterungsfrei.',
-          seoTitle: 'Kernbohrung Rosenheim & München | Präzision in Beton',
-          seoDesc: 'Exakte Kernbohrungen für Gewerbe und Privat. Wir bohren in Beton und Stein mit modernster Technik in Rosenheim und München.'
+          desc: 'Präzise Kernbohrung in Beton und Mauerwerk für Hausanschlüsse, Klima- und Lüftungsanlagen. Erschütterungsfreie Bohrung in München & Umgebung.',
+          seoTitle: 'Kernbohrung München & Rosenheim | Betonbohren mit Präzision',
+          seoDesc: 'Professionelle Kernbohrungen für Gewerbe und Privat. Wir bohren exakt in Beton und Stein. Sauber und schnell in ganz Oberbayern.'
         },
         { 
           id: '04', 
-          title: 'Sanierung', 
+          title: 'Altbausanierung', 
           slug: 'sanierung',
-          desc: 'Vorbereitende Maßnahmen für die energetische und strukturelle Sanierung Ihrer Immobilie in der Region Rosenheim.',
-          seoTitle: 'Sanierungsvorbereitung | Fachbetrieb Rosenheim',
-          seoDesc: 'Spezialisiert auf die Vorbereitung von Sanierungen. Wir schaffen die Basis für modernes Wohnen und Arbeiten.'
+          desc: 'Fachgerechte Sanierungsvorbereitung Ihrer Altbauten in Rosenheim. Wir schaffen die Grundlage für moderne Wohn- und Gewerbekonzepte.',
+          seoTitle: 'Sanierung Rosenheim | Fachbetrieb für Sanierungsvorbereitung',
+          seoDesc: 'Altbau sanieren in Rosenheim? FJ BAUSERVICE bereitet Ihre Immobilie strukturell vor. Erfahren in Denkmalschutz und Brandschutz.'
         },
         { 
           id: '05', 
-          title: 'Rückbau', 
+          title: 'Industrierückbau', 
           slug: 'rueckbau',
-          desc: 'Umweltgerechter Rückbau von Industrieanlagen und Wohngebäuden. Wir kümmern uns um die fachgerechte Entsorgung.',
-          seoTitle: 'Rückbau München | Nachhaltig & Fachgerecht',
-          seoDesc: 'Nachhaltiger Rückbau in München. FJ BAUSERVICE garantiert Professionalität und Umweltbewusstsein bei jedem Projekt.'
+          desc: 'Nachhaltiger Rückbau von Industrie- und Gewerbeanlagen. Wir garantieren eine umweltfreundliche Materialtrennung und fachgerechte Bauschuttentsorgung.',
+          seoTitle: 'Rückbau München | Industrie- & Gewerberückbau',
+          seoDesc: 'Umweltgerechter Rückbau in München. Wir demontieren Ihre Anlagen sicher und effizient. Ihr Partner für Großprojekte in Bayern.'
+        }
+      ]
+    },
+    faq: {
+      title: 'Häufig gestellte Fragen (FAQ)',
+      subtitle: 'Alles Wissenswerte zu Abbruch, Entkernung und Kernbohrung',
+      items: [
+        {
+          q: 'Was kostet ein Abbruch in München?',
+          a: 'Die Kosten hängen von der Größe, dem Material und der Zugänglichkeit ab. Wir bieten Ihnen eine kostenlose Besichtigung und ein Festpreisangebot vor Ort in München und Rosenheim.'
+        },
+        {
+          q: 'Wie lange dauert eine Entkernung?',
+          a: 'Eine Standard-Wohnungsentkernung dauert meist 3-5 Werktage. Größere Projekte planen wir individuell nach Ihren Zeitvorgaben.'
+        },
+        {
+          q: 'Benötige ich eine Genehmigung für den Abbruch?',
+          a: 'In vielen Fällen ist eine Abbruchanzeige oder Genehmigung erforderlich. Wir beraten Sie gerne zu den rechtlichen Anforderungen in Ihrer Kommune in Bayern.'
+        },
+        {
+          q: 'Führen Sie auch Kernbohrungen im bewohnten Zustand durch?',
+          a: 'Ja, durch moderne Wasserabsaugung und Staubschutzmaßnahmen können wir Kernbohrungen auch in bewohnten Räumlichkeiten extrem sauber durchführen.'
         }
       ]
     },

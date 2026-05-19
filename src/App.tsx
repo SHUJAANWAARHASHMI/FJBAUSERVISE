@@ -21,6 +21,7 @@ import ProjectGallery from './components/ProjectGallery';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import SEO from './components/SEO';
+import FAQ from './components/FAQ';
 import { supabase } from './lib/supabase';
 
 import { translations } from './lib/translations';
@@ -135,6 +136,7 @@ export default function App() {
             <SEO 
               title="Abbruch, Entkernung & Kernbohrung München" 
               description="Ihr Partner für fachgerechten Abbruch, präzise Kernbohrungen und professionelle Entkernung in München und Rosenheim. Jetzt kostenloses Angebot anfordern!" 
+              faq={t.faq.items}
             />
             <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Services lang={language} setCurrentPage={setCurrentPage} />
@@ -154,6 +156,7 @@ export default function App() {
               </div>
               <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
             </motion.section>
+            <FAQ lang={language} />
             <CTA settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Contact settings={siteSettings} lang={language} />
           </>
@@ -177,10 +180,10 @@ export default function App() {
                     "Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."
                   </p>
                   <p>
-                    {siteSettings?.name || 'FJ Bauservice'} ist ein inhabergeführter Fachbetrieb mit Sitz in Rosenheim. Wir sind spezialisiert auf komplexe Rückbau-Herausforderungen, präzise Kernbohrungen und fachgerechte Entkernung im gesamten Raum München und Oberbayern.
+                    {siteSettings?.name || 'FJ Bauservice'} ist Ihr inhabergeführtes **Abbruchunternehmen in München & Rosenheim**. Wir sind spezialisiert auf komplexe Rückbau-Herausforderungen, präzise Kernbohrungen in Beton und fachgerechte Gebäudeentkernung in ganz Oberbayern.
                   </p>
                   <p>
-                    Unser Anspruch ist absolute Termintreue und eine saubere, sichere Baustelle. Wir verstehen uns als Partner von Architekten, Bauherren und Kommunen, die Wert auf höchste Qualität und professionelle Abwicklung legen.
+                    Unser Anspruch als führende Baufirma für Abbrucharbeiten ist absolute Termintreue und eine saubere, sichere Baustelle. Wir verstehen uns als Partner von Architekten, Bauherren und Kommunen in München, die Wert auf höchste Qualität und professionelle Abwicklung beim Rückbau und der Sanierung legen.
                   </p>
                   <div className="pt-8 flex flex-wrap gap-12 border-t border-surface-border">
                     <div>
@@ -201,9 +204,10 @@ export default function App() {
                   <div className="aspect-[3/4] bg-surface-card border border-surface-border overflow-hidden shadow-2xl relative z-10">
                     <img 
                       src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
-                      alt="FJ BAUSERVICE Fachbetrieb am Bau" 
+                      alt="FJ BAUSERVICE Fachbetrieb am Bau - Abbruch München und Rosenheim" 
                       className="w-full h-full object-cover opacity-60 filter grayscale brightness-75 group-hover:scale-110 transition-transform duration-1000"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                   </div>
                   <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-20 -z-10 group-hover:scale-110 transition-transform duration-700" />

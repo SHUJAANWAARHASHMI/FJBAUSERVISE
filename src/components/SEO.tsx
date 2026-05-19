@@ -6,74 +6,71 @@ interface SEOProps {
   canonical?: string;
   ogImage?: string;
   type?: string;
+  faq?: { q: string, a: string }[];
 }
 
 export default function SEO({ 
   title, 
   description, 
-  canonical = 'https://fj-bauservice.de', 
-  ogImage = 'https://fj-bauservice.de/og-image.jpg',
-  type = 'website'
+  canonical = 'https://www.fj-bauservice.com', 
+  ogImage = 'https://www.fj-bauservice.com/favicon.png',
+  type = 'website',
+  faq
 }: SEOProps) {
   const siteName = 'FJ BAUSERVICE';
   const fullTitle = `${title} | ${siteName}`;
 
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "FJ BAUSERVICE",
-    "image": "https://fj-bauservice.de/logo.png",
-    "@id": "https://fj-bauservice.de",
-    "url": "https://fj-bauservice.de",
-    "telephone": "+49 176 12345678",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Bahnhofstraße 9",
-      "addressLocality": "Rosenheim",
-      "postalCode": "83022",
-      "addressRegion": "Bayern",
-      "addressCountry": "DE"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 47.8561,
-      "longitude": 12.1289
-    },
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday"
-      ],
-      "opens": "07:00",
-      "closes": "18:00"
-    },
-    "sameAs": [
-      "https://www.facebook.com/fjbauservice",
-      "https://www.instagram.com/fjbauservice"
-    ],
-    "areaServed": [
-      {
-        "@type": "City",
-        "name": "München"
+  const schemaData: any = [
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "FJ BAUSERVICE",
+      "image": "https://www.fj-bauservice.com/favicon.png",
+      "@id": "https://www.fj-bauservice.com",
+      "url": "https://www.fj-bauservice.com",
+      "telephone": "+49 159 06142923",
+      "priceRange": "$$",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Bahnhofstraße 9",
+        "addressLocality": "Rosenheim",
+        "postalCode": "83022",
+        "addressRegion": "Bayern",
+        "addressCountry": "DE"
       },
-      {
-        "@type": "City",
-        "name": "Rosenheim"
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 47.8564,
+        "longitude": 12.1289
       },
-      {
-        "@type": "City",
-        "name": "Miesbach"
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "08:00",
+        "closes": "18:00"
       },
-      {
-        "@type": "City",
-        "name": "Wasserburg"
-      }
-    ]
-  };
+      "areaServed": [
+        { "@type": "City", "name": "München" },
+        { "@type": "City", "name": "Rosenheim" },
+        { "@type": "State", "name": "Bayern" }
+      ]
+    }
+  ];
+
+  if (faq && faq.length > 0) {
+    schemaData.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faq.map(item => ({
+        "@type": "Question",
+        "name": item.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.a
+        }
+      }))
+    });
+  }
 
   return (
     <Helmet>
@@ -81,6 +78,7 @@ export default function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonical} />
+      <html lang="de" />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />
@@ -98,8 +96,6 @@ export default function SEO({
 
       {/* Robots and Indexing */}
       <meta name="robots" content="index, follow" />
-      <meta name="language" content="German" />
-      <meta name="revisit-after" content="7 days" />
 
       {/* Schema.org for Google */}
       <script type="application/ld+json">

@@ -1,6 +1,3 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /login
-
-Sitemap: https://fj-bauservice.com/sitemap.xml
+Sitemap: https://www.fj-bauservice.com/sitemap.xml
