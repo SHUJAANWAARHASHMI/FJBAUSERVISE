@@ -23,6 +23,7 @@ export default function Hero({ settings, lang, setCurrentPage }: { settings: any
               alt="FJ BAUSERVICE - Professionelle Abbrucharbeiten und Rückbau München" 
               className="w-full h-full object-cover opacity-30 filter grayscale sepia-[0.2] group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"
+              fetchPriority="high"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-surface-dark/40 to-transparent" />
           </div>
