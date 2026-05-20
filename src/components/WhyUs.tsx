@@ -65,31 +65,20 @@ export default function WhyUs({ lang }: { lang: 'de' | 'en' }) {
 
         {/* 100% Professionell Highlight Box */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full px-2 md:px-0 md:pr-10"
+          className="relative w-full"
         >
-          <div className="bg-primary p-6 md:p-20 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-[8px_8px_0px_0px_var(--shadow-color)] md:shadow-[20px_20px_0px_0px_var(--shadow-color)] max-w-full overflow-hidden lg:overflow-visible">
-            <div className="space-y-4 text-center lg:text-left w-full lg:w-auto">
-              <span className="text-black text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black font-display leading-[0.85] md:leading-[0.8] uppercase italic tracking-tighter block whitespace-normal break-words">
+          <div className="bg-primary p-10 sm:p-14 md:p-20 text-left shadow-[12px_12px_0px_0px_#000000] md:shadow-[24px_24px_0px_0px_#000000] max-w-full overflow-hidden border-2 border-black">
+            <div className="space-y-6 md:space-y-8">
+              <h3 className="text-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black italic tracking-tighter uppercase leading-[0.9] block whitespace-normal break-words">
                 100%<br />Professionell
-              </span>
-              <span className="text-black text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.4em] block">
-                zertifizierte Baudienstleistungen in Bayern
-              </span>
-            </div>
-            <div className="hidden lg:block h-32 w-px bg-black/20" />
-            <div className="grid grid-cols-2 gap-8 md:gap-16 w-full lg:w-auto">
-              <div className="text-center lg:text-left">
-                <span className="block text-4xl md:text-6xl font-black text-black italic">500+</span>
-                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-black/60">Projekte</span>
-              </div>
-              <div className="text-center lg:text-left">
-                <span className="block text-4xl md:text-6xl font-black text-black italic">15+</span>
-                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-black/60">Jahre</span>
-              </div>
+              </h3>
+              <p className="text-black text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] block">
+                Zertifizierte Baudienstleistungen in Bayern
+              </p>
             </div>
           </div>
         </motion.div>
