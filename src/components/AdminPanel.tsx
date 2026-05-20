@@ -858,9 +858,9 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
                         {lang === 'de' ? (project.category_de || project.category) : (project.category_en || project.category)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEditProject(project)} className="p-2 text-zinc-500 hover:text-primary"><Pencil size={16} /></button>
-                      <button onClick={() => handleDeleteProject(project)} className="p-2 text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button>
+                    <div className="flex items-center gap-1 md:gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
+                      <button onClick={() => startEditProject(project)} className="p-3 md:p-2 text-text-muted hover:text-primary active:text-primary transition-colors" title={lang === 'de' ? 'Bearbeiten' : 'Edit'} aria-label={lang === 'de' ? 'Bearbeiten' : 'Edit'}><Pencil size={18} /></button>
+                      <button onClick={() => handleDeleteProject(project)} className="p-3 md:p-2 text-text-muted hover:text-red-500 active:text-red-500 transition-colors" title={lang === 'de' ? 'Löschen' : 'Delete'} aria-label={lang === 'de' ? 'Löschen' : 'Delete'}><Trash2 size={18} /></button>
                     </div>
                   </div>
                 ))}

@@ -3,6 +3,7 @@ import { Menu, X, ArrowRight, Lock, Sun, Moon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 import { translations } from '../lib/translations';
+import Logo from './Logo';
 
 interface NavbarProps {
   currentPage: string;
@@ -61,24 +62,17 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
       isScrolled ? 'bg-surface-dark h-16 border-surface-border' : 'bg-surface-dark h-24 border-transparent'
     }`}>
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between gap-6">
         {/* Logo */}
         <div 
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center cursor-pointer group shrink-0"
           onClick={handleLogoClick}
         >
-          <div className="bg-primary text-black font-black w-10 h-10 flex items-center justify-center text-xl shadow-[4px_4px_0px_0px_var(--shadow-color)]">
-            {settings?.name?.substring(0, 2) || 'FJ'}
-          </div>
-          <div className="flex flex-col -space-y-1">
-            <span className="heading-dynamic text-xl tracking-tight leading-none group-hover:text-primary transition-colors">
-              {settings?.name || 'FJ BAUSERVICE'}
-            </span>
-          </div>
+          <Logo iconSize={isScrolled ? 42 : 52} />
         </div>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-10">
+        <div className="hidden lg:flex items-center gap-5 xl:gap-10 shrink-0">
           {navLinks.map((link) => (
             <button
               key={link.id}
@@ -101,7 +95,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
         </div>
 
         {/* Mobile Toggle */}
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-4 lg:hidden">
           <button 
             className="text-text-main"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -118,7 +112,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[45] md:hidden"
+              className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[45] lg:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div 
@@ -126,7 +120,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 w-[80%] max-w-sm h-full bg-surface-dark border-l border-surface-border z-[55] md:hidden flex flex-col p-8 pt-24 gap-8"
+              className="fixed top-0 right-0 w-[80%] max-w-sm h-full bg-surface-dark border-l border-surface-border z-[55] lg:hidden flex flex-col p-8 pt-24 gap-8"
             >
               <div className="flex flex-col gap-4">
                 {navLinks.map((link) => (

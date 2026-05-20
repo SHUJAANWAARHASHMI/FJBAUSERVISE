@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowUp, Facebook, Instagram, Linkedin, Phone, Mail } from 'lucide-react';
 import { translations } from '../lib/translations';
+import Logo from './Logo';
 
 interface FooterProps {
   settings: any;
@@ -35,15 +36,10 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
       <div className="max-w-7xl mx-auto grid md:grid-cols-12 gap-12 mb-24 relative z-10">
         <div className="md:col-span-4 space-y-10">
           <div 
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center cursor-pointer group"
             onClick={() => setCurrentPage('home')}
           >
-            <div className="bg-primary text-black font-black w-12 h-12 flex items-center justify-center text-2xl shadow-[4px_4px_0px_0px_var(--shadow-color)]">
-              {settings?.name?.substring(0, 2) || 'FJ'}
-            </div>
-            <span className="heading-dynamic text-2xl tracking-tight leading-none text-text-main group-hover:text-primary transition-colors">
-              {settings?.name || 'FJ BAUSERVICE'}
-            </span>
+            <Logo iconSize={52} />
           </div>
           <p className="text-text-muted text-base leading-relaxed max-w-sm font-medium">
             Ihr Partner für Abbruch, Entkernung und Sanierung in München und Rosenheim. Wir schaffen seit über 15 Jahren Raum für Neues – professionell, sicher und fachgerecht.
