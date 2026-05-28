@@ -1,10 +1,31 @@
 import { motion } from 'motion/react';
-import { Hammer, Drill, Building2, Truck, ArrowRight, Construction } from 'lucide-react';
+import { Hammer, Drill, Building2, Truck, ArrowRight, Construction, Zap, ShieldCheck, Clock, Star, Award } from 'lucide-react';
 import { translations } from '../lib/translations';
+import type { Service } from '../App';
 
-export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', setCurrentPage?: (page: string) => void }) {
+const ICON_MAP: Record<string, React.ReactNode> = {
+  Hammer:       <Hammer className="text-primary" size={40} />,
+  Drill:        <Drill className="text-primary" size={40} />,
+  Building2:    <Building2 className="text-primary" size={40} />,
+  Truck:        <Truck className="text-primary" size={40} />,
+  Construction: <Construction className="text-primary" size={40} />,
+  Zap:          <Zap className="text-primary" size={40} />,
+  ShieldCheck:  <ShieldCheck className="text-primary" size={40} />,
+  Clock:        <Clock className="text-primary" size={40} />,
+  Star:         <Star className="text-primary" size={40} />,
+  Award:        <Award className="text-primary" size={40} />,
+};
+
+interface ServicesProps {
+  lang: 'de' | 'en';
+  setCurrentPage?: (page: string) => void;
+  dbServices?: Service[];
+}
+
+export default function Services({ lang, setCurrentPage, dbServices }: ServicesProps) {
   const t = translations[lang];
-  const icons = [
+  
+  const fallbackIcons = [
     <Hammer className="text-primary" size={40} />,
     <Building2 className="text-primary" size={40} />,
     <Drill className="text-primary" size={40} />,
@@ -12,10 +33,20 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
     <Truck className="text-primary" size={40} />
   ];
 
-  const services = t.services.items.map((item, idx) => ({
-    ...item,
-    icon: icons[idx] || <Hammer className="text-primary" size={40} />
-  }));
+  // Build service list: use DB if available, else fall back to translations
+  const services = dbServices && dbServices.length > 0
+    ? dbServices.map((svc, idx) => ({
+        id: String(idx + 1).padStart(2, '0'),
+        title: lang === 'de' ? (svc.title_de || svc.title) : (svc.title_en || svc.title),
+        desc: lang === 'de' ? (svc.description_de || svc.description) : (svc.description_en || svc.description),
+        icon: ICON_MAP[svc.icon_name || 'Hammer'] || fallbackIcons[idx % fallbackIcons.length]
+      }))
+    : t.services.items.map((item, idx) => ({
+        id: item.id,
+        title: item.title,
+        desc: item.desc,
+        icon: fallbackIcons[idx] || <Hammer className="text-primary" size={40} />
+      }));
 
   return (
     <section className="py-32 px-6 max-w-7xl mx-auto overflow-hidden relative">
@@ -24,7 +55,7 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
         BAU
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -35,7 +66,7 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
           <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">{t.services.subtitle}</span>
           <h2 className="heading-dynamic text-5xl sm:text-6xl md:text-8xl italic text-text-main leading-[1.1]">{t.services.title}</h2>
         </div>
-        <button 
+        <button
           onClick={() => setCurrentPage?.('contact')}
           className="flex items-center gap-3 text-text-main font-black uppercase tracking-[0.2em] text-sm hover:text-primary transition-colors group border-b-2 border-surface-border hover:border-primary pb-1"
         >
@@ -50,11 +81,7 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ 
-              delay: idx * 0.1,
-              duration: 0.8,
-              ease: [0.16, 1, 0.3, 1]
-            }}
+            transition={{ delay: idx * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => setCurrentPage?.('contact')}
             className="card-service flex flex-col gap-8 group hover:-translate-y-3 cursor-pointer text-left h-full"
           >
@@ -68,15 +95,11 @@ export default function Services({ lang, setCurrentPage }: { lang: 'de' | 'en', 
             </div>
             <div className="space-y-4 z-10">
               <h3 className="heading-dynamic text-3xl tracking-tight leading-tight group-hover:text-primary transition-colors">{service.title}</h3>
-              <p className="text-text-muted text-base leading-relaxed font-medium">
-                {service.desc}
-              </p>
+              <p className="text-text-muted text-base leading-relaxed font-medium">{service.desc}</p>
             </div>
             <div className="mt-auto pt-4 flex items-center gap-2 text-text-main font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity z-10">
               Details anfragen <ArrowRight size={14} strokeWidth={3} />
             </div>
-            
-            {/* Hover overlay element */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </motion.div>
         ))}

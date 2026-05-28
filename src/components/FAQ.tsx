@@ -2,12 +2,26 @@ import { motion } from 'motion/react';
 import { translations } from '../lib/translations';
 import { Plus, Minus } from 'lucide-react';
 import { useState } from 'react';
+import type { Faq } from '../App';
 
-export default function FAQ({ lang }: { lang: 'de' | 'en' }) {
+interface FAQProps {
+  lang: 'de' | 'en';
+  dbFaqs?: Faq[];
+}
+
+export default function FAQ({ lang, dbFaqs }: FAQProps) {
   const t = translations[lang];
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  if (!t.faq) return null;
+  // Prefer DB FAQs if available, otherwise fall back to translations
+  const items = dbFaqs && dbFaqs.length > 0
+    ? dbFaqs.map(faq => ({
+        q: lang === 'de' ? (faq.question_de || faq.question) : (faq.question_en || faq.question),
+        a: lang === 'de' ? (faq.answer_de || faq.answer) : (faq.answer_en || faq.answer),
+      }))
+    : (t.faq?.items || []);
+
+  if (!items || items.length === 0) return null;
 
   return (
     <section className="py-32 px-6 max-w-4xl mx-auto">
@@ -17,9 +31,9 @@ export default function FAQ({ lang }: { lang: 'de' | 'en' }) {
       </div>
 
       <div className="space-y-4">
-        {t.faq.items.map((item, idx) => (
-          <div 
-            key={idx} 
+        {items.map((item, idx) => (
+          <div
+            key={idx}
             className="border border-surface-border bg-surface-card overflow-hidden transition-all duration-300"
           >
             <button
