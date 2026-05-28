@@ -5,26 +5,30 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
   const t = translations[lang];
   const ctaImage = settings?.cta_image_url || 'https://images.unsplash.com/photo-1590644365607-1c5a519a9a37?q=80&w=2070&auto=format&fit=crop';
 
+  // Use dynamic content from settings, fall back to translations
+  const ctaTitle   = lang === 'de' ? (settings?.cta_title_de   || t.cta.title)   : (settings?.cta_title_en   || t.cta.title);
+  const ctaSubtitle = lang === 'de' ? (settings?.cta_subtitle_de || t.cta.subtitle) : (settings?.cta_subtitle_en || t.cta.subtitle);
+  const ctaButton   = lang === 'de' ? (settings?.cta_button_de   || t.cta.button)  : (settings?.cta_button_en  || t.cta.button);
+
   return (
     <section className="bg-primary py-32 px-6 relative overflow-hidden">
-      <motion.div 
+      <motion.div
         initial={{ scale: 1.1, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
         className="absolute inset-0 z-0"
       >
-        <img 
-          src={ctaImage} 
-          alt="FJ BAUSERVICE Rückbau München - Abbrucharbeiten und Fachbetrieb" 
+        <img
+          src={ctaImage}
+          alt="FJ BAUSERVICE Rückbau München"
           className="w-full h-full object-cover opacity-10 filter grayscale brightness-50"
           referrerPolicy="no-referrer"
           loading="lazy"
         />
       </motion.div>
 
-      {/* Decorative BG text */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 100 }}
         whileInView={{ opacity: 0.15, y: 0 }}
         viewport={{ once: true }}
@@ -37,7 +41,7 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
       </motion.div>
 
       <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center gap-12">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -46,14 +50,14 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
         >
           <span className="text-black font-black uppercase tracking-[0.4em] text-[10px] md:text-xs">Bereit für den nächsten Schritt?</span>
           <h2 className="heading-dynamic text-black text-5xl sm:text-6xl md:text-9xl leading-[1.1] md:leading-[0.9] italic">
-            {t.cta.title}
+            {ctaTitle}
           </h2>
           <p className="text-black/80 text-base md:text-2xl font-bold leading-relaxed max-w-2xl mx-auto">
-            {t.cta.subtitle}
+            {ctaSubtitle}
           </p>
         </motion.div>
-        
-        <motion.button 
+
+        <motion.button
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
@@ -61,7 +65,7 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
           onClick={() => setCurrentPage('contact')}
           className="bg-surface-dark text-text-main hover:bg-text-main hover:text-surface-dark px-16 py-8 font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[10px_10px_0px_0px_var(--shadow-color)] hover:shadow-none active:translate-x-2 active:translate-y-2"
         >
-          {t.cta.button}
+          {ctaButton}
         </motion.button>
       </div>
     </section>

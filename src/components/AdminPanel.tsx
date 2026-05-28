@@ -1,988 +1,1680 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Plus, Trash2, LayoutDashboard, Briefcase, Mail, Loader2, Image as ImageIcon, LogOut, Pencil } from 'lucide-react';
+import {
+  X, Save, Plus, Trash2, LayoutDashboard, Briefcase, Mail,
+  Loader2, Image as ImageIcon, LogOut, Pencil, ChevronDown, ChevronUp,
+  Globe, MessageSquare, HelpCircle, Settings, Database,
+  CheckCircle2, AlertCircle, Eye, EyeOff, GripVertical, Upload,
+  FileText, Star, Phone, MapPin, Search, BarChart2, Palette,
+  RefreshCw, Download, Shield, Users, Home, Award, Copy, Check,
+  ExternalLink, Info, Layers, Zap
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface AdminPanelProps {
   onClose: () => void;
   settings: any;
   projects: any[];
+  services: any[];
+  faqs: any[];
+  testimonials: any[];
   refreshData: () => void;
   lang: 'en' | 'de';
 }
 
-export default function AdminPanel({ onClose, settings, projects, refreshData, lang }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'projects' | 'inquiries' | 'data'>('settings');
-  const [inquiries, setInquiries] = useState<any[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [isUploading, setIsUploading] = useState<string | null>(null);
-  const [editingProject, setEditingProject] = useState<any>(null);
-  const [imageHistory, setImageHistory] = useState<string[]>([]);
-  const [showDatabaseHelp, setShowDatabaseHelp] = useState(false);
-  
-  // Settings Form State
-  const [settingsForm, setSettingsForm] = useState(settings || {});
+type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'seo' | 'inquiries' | 'media' | 'data';
 
-  // Load image history from localStorage
-  useEffect(() => {
-    const history = localStorage.getItem('fj_image_history');
-    if (history) {
-      try {
-        setImageHistory(JSON.parse(history));
-      } catch (e) {
-        console.error("Failed to parse image history", e);
-      }
+interface Toast { id: string; type: 'success' | 'error' | 'info'; message: string; }
+
+// ─── Toast Component ─────────────────────────────────────────────────────────
+function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
+  return (
+    <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 max-w-sm">
+      <AnimatePresence>
+        {toasts.map(toast => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, x: 60, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 60, scale: 0.9 }}
+            className={`flex items-center gap-3 px-5 py-4 rounded-sm shadow-2xl border text-sm font-bold ${
+              toast.type === 'success' ? 'bg-green-900/90 border-green-500/50 text-green-300' :
+              toast.type === 'error'   ? 'bg-red-900/90 border-red-500/50 text-red-300' :
+                                        'bg-zinc-800/90 border-zinc-600/50 text-zinc-200'
+            }`}
+          >
+            {toast.type === 'success' && <CheckCircle2 size={18} className="shrink-0 text-green-400" />}
+            {toast.type === 'error'   && <AlertCircle  size={18} className="shrink-0 text-red-400" />}
+            {toast.type === 'info'    && <Info          size={18} className="shrink-0 text-blue-400" />}
+            <span className="flex-1">{toast.message}</span>
+            <button onClick={() => removeToast(toast.id)} className="ml-2 opacity-60 hover:opacity-100">
+              <X size={14} />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Section Header ──────────────────────────────────────────────────────────
+function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+  return (
+    <div className="flex items-start gap-4 pb-6 border-b border-white/10">
+      <div className="p-3 bg-primary/10 border border-primary/20 rounded-sm text-primary shrink-0">{icon}</div>
+      <div>
+        <h3 className="heading-dynamic text-2xl md:text-3xl">{title}</h3>
+        <p className="text-zinc-500 text-sm mt-1">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Field Component ─────────────────────────────────────────────────────────
+function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+      {hint && <p className="text-[10px] text-zinc-600 italic leading-tight">{hint}</p>}
+    </div>
+  );
+}
+
+// ─── Input / Textarea Styles ──────────────────────────────────────────────────
+const inputCls = "w-full bg-[#0a0a0a] border border-[#222] p-3 rounded-sm focus:border-primary outline-none transition-colors text-sm text-white placeholder:text-zinc-700";
+const textareaCls = `${inputCls} resize-none`;
+
+// ─── Image Upload Field ───────────────────────────────────────────────────────
+function ImageUploadField({
+  label, value, fieldKey, isUploading, onUpload, onChange, onDrop, hint
+}: {
+  label: string; value: string; fieldKey: string; isUploading: string | null;
+  onUpload: (field: string, file: File) => void;
+  onChange: (val: string) => void;
+  onDrop?: (field: string, file: File) => void;
+  hint?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      onDrop ? onDrop(fieldKey, file) : onUpload(fieldKey, file);
     }
-  }, []);
-
-  const addToHistory = (url: string) => {
-    setImageHistory(prev => {
-      const newHistory = [url, ...prev.filter(u => u !== url)].slice(0, 12);
-      localStorage.setItem('fj_image_history', JSON.stringify(newHistory));
-      return newHistory;
-    });
   };
 
-  // Update form sync
+  return (
+    <Field label={label} hint={hint}>
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-sm p-4 transition-all ${
+          dragging ? 'border-primary bg-primary/5' : 'border-[#222] hover:border-[#444]'
+        }`}
+      >
+        {value ? (
+          <div className="relative group">
+            <img src={value} alt="" className="w-full h-40 object-cover rounded-sm opacity-80" />
+            <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-sm">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="p-2 bg-primary text-black rounded-sm hover:bg-white transition-colors"
+              >
+                {isUploading === fieldKey ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="p-2 bg-red-600 text-white rounded-sm hover:bg-red-500 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-8 cursor-pointer"
+            onClick={() => inputRef.current?.click()}
+          >
+            {isUploading === fieldKey ? (
+              <Loader2 size={28} className="animate-spin text-primary" />
+            ) : (
+              <Upload size={28} className="text-zinc-600" />
+            )}
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-400">
+                {isUploading === fieldKey ? 'Uploading...' : 'Drag & drop or click to upload'}
+              </p>
+              <p className="text-[10px] text-zinc-600 mt-1">PNG, JPG, WebP up to 10MB</p>
+            </div>
+          </div>
+        )}
+        <input ref={inputRef} type="file" className="hidden" accept="image/*"
+          onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(fieldKey, f); e.target.value = ''; }}
+          disabled={!!isUploading} />
+      </div>
+      <div className="flex gap-2 items-center mt-2">
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="Or paste image URL..." className={`${inputCls} text-xs`} />
+      </div>
+    </Field>
+  );
+}
+
+// ─── Bilingual Input ──────────────────────────────────────────────────────────
+function BilingualInput({
+  labelDe, labelEn, valueDe, valueEn,
+  onChangeDe, onChangeEn, textarea = false, rows = 3, required = false
+}: {
+  labelDe: string; labelEn: string; valueDe: string; valueEn: string;
+  onChangeDe: (v: string) => void; onChangeEn: (v: string) => void;
+  textarea?: boolean; rows?: number; required?: boolean;
+}) {
+  const [tab, setTab] = useState<'de' | 'en'>('de');
+  const Tag = textarea ? 'textarea' : 'input';
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setTab('de')}
+          className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-sm transition-colors ${tab === 'de' ? 'bg-primary text-black' : 'bg-[#111] text-zinc-500 hover:text-white'}`}>
+          🇩🇪 DE
+        </button>
+        <button type="button" onClick={() => setTab('en')}
+          className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-sm transition-colors ${tab === 'en' ? 'bg-primary text-black' : 'bg-[#111] text-zinc-500 hover:text-white'}`}>
+          🇺🇸 EN
+        </button>
+      </div>
+      {tab === 'de' ? (
+        <div className="space-y-1">
+          <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{labelDe}{required && ' *'}</label>
+          <Tag
+            value={valueDe} onChange={e => onChangeDe((e.target as any).value)}
+            className={textarea ? textareaCls : inputCls} rows={textarea ? rows : undefined}
+            required={required}
+          />
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{labelEn}</label>
+          <Tag
+            value={valueEn} onChange={e => onChangeEn((e.target as any).value)}
+            className={textarea ? textareaCls : inputCls} rows={textarea ? rows : undefined}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MAIN ADMIN PANEL
+// ═════════════════════════════════════════════════════════════════════════════
+export default function AdminPanel({
+  onClose, settings, projects: initialProjects, services: initialServices,
+  faqs: initialFaqs, testimonials: initialTestimonials, refreshData, lang
+}: AdminPanelProps) {
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isUploading, setIsUploading] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Data states
+  const [settingsForm, setSettingsForm] = useState<any>(settings || {});
+  const [projects, setProjects] = useState<any[]>(initialProjects || []);
+  const [services, setServices] = useState<any[]>(initialServices || []);
+  const [faqs, setFaqs] = useState<any[]>(initialFaqs || []);
+  const [testimonials, setTestimonials] = useState<any[]>(initialTestimonials || []);
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
+
+  // Modal states
+  const [editingProject, setEditingProject] = useState<any>(null);
+  const [editingService, setEditingService] = useState<any>(null);
+  const [editingFaq, setEditingFaq] = useState<any>(null);
+  const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
+
+  // Stats for dashboard
+  const [stats, setStats] = useState({ projects: 0, services: 0, faqs: 0, testimonials: 0, inquiries: 0 });
+
+  const addToast = useCallback((type: Toast['type'], message: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(p => [...p, { id, type, message }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(p => p.filter(t => t.id !== id));
+  }, []);
+
+  // Sync settings form
   useEffect(() => {
     if (settings) {
-      // Clean up null values to empty strings to avoid React warnings
-      const cleaned = { ...settings };
-      Object.keys(cleaned).forEach(key => {
-        if (cleaned[key] === null) cleaned[key] = '';
-      });
+      const cleaned: any = {};
+      Object.keys(settings).forEach(k => { cleaned[k] = settings[k] ?? ''; });
       setSettingsForm(cleaned);
     }
   }, [settings]);
-  
-  // Project Form State
-  const initialProjectState = { 
-    title: '', 
-    title_en: '', 
-    title_de: '',
-    category: '', 
-    category_en: '', 
-    category_de: '',
-    image_url: '',
-    description: '',
-    description_en: '',
-    description_de: ''
-  };
-  const [projectForm, setProjectForm] = useState(initialProjectState);
 
-  useEffect(() => {
-    if (activeTab === 'inquiries') {
-      fetchInquiries();
-    }
-  }, [activeTab]);
+  useEffect(() => { setProjects(initialProjects || []); }, [initialProjects]);
+  useEffect(() => { setServices(initialServices || []); }, [initialServices]);
+  useEffect(() => { setFaqs(initialFaqs || []); }, [initialFaqs]);
+  useEffect(() => { setTestimonials(initialTestimonials || []); }, [initialTestimonials]);
 
-  const handleImageUpload = async (field: string, e: React.ChangeEvent<HTMLInputElement>, isProject = false) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setIsUploading(field);
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `uploads/${fileName}`; // Changed to a folder within the bucket
-
-        // Upload to Supabase Storage
-        const bucketName = 'images';
-        const { error: uploadError } = await supabase.storage
-          .from(bucketName)
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error("Storage upload error details:", uploadError);
-          if (uploadError.message.includes('bucket not found')) {
-            throw new Error(lang === 'de' 
-              ? 'Bucket "images" nicht gefunden. Erstellen Sie einen öffentlichen Bucket namens "images" in Supabase Storage.' 
-              : 'Bucket "images" not found. Create a PUBLIC bucket named "images" in Supabase Storage.');
-          }
-          if (uploadError.message.toLowerCase().includes('policy') || uploadError.message.toLowerCase().includes('permission denied')) {
-            throw new Error(lang === 'de'
-              ? 'Berechtigungsfehler! Sie müssen die "INSERT"-Policy für den Bucket "images" in Supabase hinzufügen.'
-              : 'Permission denied! You MUST add an "INSERT" policy for the "images" bucket in Supabase Storage.');
-          }
-          throw uploadError;
-        }
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(filePath);
-
-        if (isProject) {
-          setProjectForm(prev => ({ ...prev, [field]: publicUrl }));
-        } else {
-          setSettingsForm((prev: any) => ({ ...prev, [field]: publicUrl }));
-        }
-        addToHistory(publicUrl);
-        
-        // Clear input so same file can be uploaded again if needed
-        e.target.value = '';
-      } catch (error: any) {
-        console.error("Full upload error:", error);
-        alert((lang === 'de' ? 'Upload-Fehler: ' : 'Upload error: ') + error.message);
-      } finally {
-        setIsUploading(null);
-      }
-    }
-  };
-
-  // Inquiries Logic
-  const [loadingInquiries, setLoadingInquiries] = useState(false);
-
-  const fetchInquiries = async () => {
+  // Fetch inquiries
+  const fetchInquiries = useCallback(async () => {
     setLoadingInquiries(true);
-    const { data, error } = await supabase
-      .from('contact_inquiries')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (data) setInquiries(data);
+    const { data } = await supabase.from('contact_inquiries').select('*').order('created_at', { ascending: false });
+    if (data) { setInquiries(data); setStats(p => ({ ...p, inquiries: data.length })); }
     setLoadingInquiries(false);
-  };
-
-  const handleDeleteInquiry = async (id: any) => {
-    if (!confirm(lang === 'de' ? 'Anfrage löschen?' : 'Delete inquiry?')) return;
-    const { error } = await supabase.from('contact_inquiries').delete().eq('id', id);
-    if (!error) fetchInquiries();
-  };
+  }, []);
 
   useEffect(() => {
-    if (activeTab === 'inquiries') {
-      fetchInquiries();
-    }
-  }, [activeTab]);
+    if (activeTab === 'inquiries') fetchInquiries();
+  }, [activeTab, fetchInquiries]);
 
-  const handleUpdateSettings = async (e: React.FormEvent) => {
+  // Load stats
+  useEffect(() => {
+    setStats({
+      projects: projects.length,
+      services: services.length,
+      faqs: faqs.length,
+      testimonials: testimonials.length,
+      inquiries: 0
+    });
+  }, [projects, services, faqs, testimonials]);
+
+  // ── Image Upload ────────────────────────────────────────────────────────────
+  const handleImageUpload = async (field: string, file: File): Promise<string | null> => {
+    setIsUploading(field);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file, {
+        cacheControl: '3600', upsert: false
+      });
+
+      if (uploadError) {
+        if (uploadError.message.includes('bucket')) throw new Error('Storage bucket "images" not found. Create a public bucket named "images" in Supabase.');
+        if (uploadError.message.toLowerCase().includes('policy') || uploadError.message.toLowerCase().includes('permission')) throw new Error('Permission denied. Add INSERT policy for "images" bucket in Supabase Storage.');
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+      addToast('success', 'Image uploaded successfully!');
+      return publicUrl;
+    } catch (err: any) {
+      addToast('error', 'Upload error: ' + err.message);
+      return null;
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
+  const uploadAndSetSettings = async (field: string, file: File) => {
+    const url = await handleImageUpload(field, file);
+    if (url) setSettingsForm((p: any) => ({ ...p, [field]: url }));
+  };
+
+  // ── Save Settings ──────────────────────────────────────────────────────────
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
-    // Clean up data to only include valid columns
     const { id, updated_at, created_at, ...updateData } = settingsForm;
-    
-    const { error } = await supabase
-      .from('site_settings')
-      .upsert({ id: 1, ...updateData }, { onConflict: 'id' });
-    
+    const { error } = await supabase.from('site_settings').upsert({ id: 1, ...updateData }, { onConflict: 'id' });
     if (error) {
-      console.error("Settings save error:", error);
-      if (error.message.includes('column') || error.code === 'PGRST204') {
-        const schemaError = error.code === 'PGRST204' || error.message.includes('cache');
-        alert((lang === 'de' ? 'DATENBANK-FEHLER: ' : 'DATABASE ERROR: ') + 
-          (schemaError 
-            ? (lang === 'de' ? 'Schema-Cache veraltet. Bitte klicken Sie in den Supabase-Einstellungen auf "Reload Schema".' : 'Schema cache is stale. Please click "Reload Schema" in your Supabase API Settings.')
-            : (lang === 'de' ? 'Spalten fehlen in der Tabelle "site_settings".' : 'Columns missing in "site_settings" table.')));
-        setShowDatabaseHelp(true);
-      } else {
-        alert((lang === 'de' ? 'Fehler beim Speichern: ' : 'Error saving: ') + error.message);
-      }
+      addToast('error', 'Save error: ' + error.message);
     } else {
-      alert(lang === 'de' ? 'Einstellungen erfolgreich gespeichert!' : 'Settings saved successfully!');
+      addToast('success', 'Settings saved successfully!');
       refreshData();
     }
     setIsSaving(false);
   };
+
+  // ── Projects CRUD ───────────────────────────────────────────────────────────
+  const blankProject = { title: '', title_de: '', title_en: '', category: '', category_de: '', category_en: '', image_url: '', description: '', description_de: '', description_en: '' };
+  const [projectForm, setProjectForm] = useState(blankProject);
 
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
-    // Ensure title/category are populated if localized ones are filled
-    const finalProject = {
+    const data = {
       ...projectForm,
-      title: projectForm.title || projectForm.title_de || projectForm.title_en || 'Untitled',
-      category: projectForm.category || projectForm.category_de || projectForm.category_en || 'Misc',
-      description: projectForm.description || projectForm.description_de || projectForm.description_en || ''
+      title: projectForm.title_de || projectForm.title || 'Untitled',
+      category: projectForm.category_de || projectForm.category || 'General',
+      description: projectForm.description_de || projectForm.description || ''
     };
-
     if (editingProject) {
-      const { id, created_at, ...updateData } = finalProject;
-      const { error } = await supabase.from('projects').update(updateData).eq('id', editingProject.id);
-      if (error) {
-        console.error("Update error:", error);
-        if (error.message.includes('column') || error.code === 'PGRST204') {
-          alert((lang === 'de' ? 'DATENBANK-FEHLER: ' : 'DATABASE ERROR: ') + 
-            (lang === 'de' ? 'Spalten fehlen! Bitte führen Sie das SQL-Setup im Supabase Dashboard aus (siehe Anleitung oben).' : 'Columns missing! Please run the SQL setup in your Supabase Dashboard (see instructions above).'));
-        } else {
-          alert((lang === 'de' ? 'Fehler beim Aktualisieren: ' : 'Error updating: ') + error.message);
-        }
-      } else {
-        alert(lang === 'de' ? 'Projekt erfolgreich aktualisiert!' : 'Project updated successfully!');
-        setEditingProject(null);
-        setProjectForm(initialProjectState);
-        refreshData();
+      const { id, created_at, ...upd } = data as any;
+      const { error } = await supabase.from('projects').update(upd).eq('id', editingProject.id);
+      if (error) { addToast('error', 'Update error: ' + error.message); } else {
+        addToast('success', 'Project updated!'); setEditingProject(null); setProjectForm(blankProject); refreshData();
       }
     } else {
-      // Ensure no id or created_at for new insertion
-      const { id, created_at, ...insertData } = finalProject;
-      const { error } = await supabase.from('projects').insert([insertData]);
-      if (error) {
-        console.error("Insert error:", error);
-        if (error.message.includes('column') || error.code === 'PGRST204') {
-          alert((lang === 'de' ? 'DATENBANK-FEHLER: ' : 'DATABASE ERROR: ') + 
-            (lang === 'de' ? 'Spalten fehlen! Bitte führen Sie das SQL-Setup im Supabase Dashboard aus (siehe Anleitung oben).' : 'Columns missing! Please run the SQL setup in your Supabase Dashboard (see instructions above).'));
-        } else {
-          alert((lang === 'de' ? 'Fehler beim Hinzufügen: ' : 'Error adding: ') + error.message);
-        }
-      } else {
-        setProjectForm(initialProjectState);
-        refreshData();
-        alert(lang === 'de' ? 'Projekt erfolgreich hinzugefügt!' : 'Project added successfully!');
+      const { id, created_at, ...ins } = data as any;
+      const { error } = await supabase.from('projects').insert([ins]);
+      if (error) { addToast('error', 'Error adding: ' + error.message); } else {
+        addToast('success', 'Project added!'); setProjectForm(blankProject); refreshData();
       }
     }
     setIsSaving(false);
   };
 
-  const startEditProject = (project: any) => {
-    const cleaned = { ...project };
-    Object.keys(cleaned).forEach(key => {
-      if (cleaned[key] === null) cleaned[key] = '';
-    });
-    setEditingProject(project);
-    setProjectForm(cleaned);
-    setActiveTab('projects');
+  const deleteProject = async (project: any) => {
+    if (!confirm('Delete this project?')) return;
+    await supabase.from('projects').delete().eq('id', project.id);
+    addToast('success', 'Project deleted.'); refreshData();
   };
 
-  const cancelEdit = () => {
-    setEditingProject(null);
-    setProjectForm(initialProjectState);
-  };
+  // ── Services CRUD ───────────────────────────────────────────────────────────
+  const blankService = { title: '', title_de: '', title_en: '', description: '', description_de: '', description_en: '', icon_name: 'Hammer', sort_order: 0 };
+  const [serviceForm, setServiceForm] = useState(blankService);
 
-  const selectFromHistory = (url: string, field: string, isProject: boolean) => {
-    if (isProject) {
-      setProjectForm(prev => ({ ...prev, [field]: url }));
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const data = { ...serviceForm, title: serviceForm.title_de || serviceForm.title || 'Service', description: serviceForm.description_de || serviceForm.description || '' };
+    if (editingService) {
+      const { id, created_at, ...upd } = data as any;
+      const { error } = await supabase.from('services').update(upd).eq('id', editingService.id);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'Service updated!'); setEditingService(null); setServiceForm(blankService); refreshData(); }
     } else {
-      setSettingsForm((prev: any) => ({ ...prev, [field]: url }));
+      const { id, created_at, ...ins } = data as any;
+      const { error } = await supabase.from('services').insert([ins]);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'Service added!'); setServiceForm(blankService); refreshData(); }
     }
+    setIsSaving(false);
   };
 
-  const renderImageHistory = (field: string, isProject: boolean) => (
-    imageHistory.length > 0 && (
-      <div className="space-y-2 mt-4">
-        <label className="text-[9px] uppercase tracking-tighter text-text-muted font-black">
-          {lang === 'de' ? 'Kürzlich hochgeladen' : 'Recent Uploads'}
-        </label>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {imageHistory.map((url, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => selectFromHistory(url, field, isProject)}
-              className="w-12 h-12 bg-surface-dark border border-surface-border rounded-sm overflow-hidden shrink-0 hover:border-primary transition-all relative group"
-            >
-              <img src={url} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-100" />
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  );
+  const deleteService = async (id: string) => {
+    if (!confirm('Delete this service?')) return;
+    await supabase.from('services').delete().eq('id', id);
+    addToast('success', 'Service deleted.'); refreshData();
+  };
 
-  const handleDeleteProject = async (project: any) => {
-    if (!confirm(lang === 'de' ? 'Projekt wirklich löschen?' : 'Really delete this project?')) return;
-    
-    // Try to delete from storage if it's our own image
-    if (project.image_url && project.image_url.includes('supabase.co')) {
-      const pathMatches = project.image_url.split('/public/images/');
-      if (pathMatches.length > 1) {
-        try {
-          await supabase.storage.from('images').remove([pathMatches[1]]);
-        } catch (e) {
-          console.warn("Storage deletion failed, continuing with record deletion:", e);
+  // ── FAQs CRUD ───────────────────────────────────────────────────────────────
+  const blankFaq = { question: '', question_de: '', question_en: '', answer: '', answer_de: '', answer_en: '', sort_order: 0 };
+  const [faqForm, setFaqForm] = useState(blankFaq);
+
+  const handleSaveFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const data = { ...faqForm, question: faqForm.question_de || faqForm.question || '?', answer: faqForm.answer_de || faqForm.answer || '' };
+    if (editingFaq) {
+      const { id, created_at, ...upd } = data as any;
+      const { error } = await supabase.from('faqs').update(upd).eq('id', editingFaq.id);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'FAQ updated!'); setEditingFaq(null); setFaqForm(blankFaq); refreshData(); }
+    } else {
+      const { id, created_at, ...ins } = data as any;
+      const { error } = await supabase.from('faqs').insert([ins]);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'FAQ added!'); setFaqForm(blankFaq); refreshData(); }
+    }
+    setIsSaving(false);
+  };
+
+  const deleteFaq = async (id: string) => {
+    if (!confirm('Delete this FAQ?')) return;
+    await supabase.from('faqs').delete().eq('id', id);
+    addToast('success', 'FAQ deleted.'); refreshData();
+  };
+
+  // ── Testimonials CRUD ───────────────────────────────────────────────────────
+  const blankTestimonial = { author: '', company: '', text: '', text_de: '', text_en: '', rating: 5, avatar_url: '' };
+  const [testimonialForm, setTestimonialForm] = useState<any>(blankTestimonial);
+
+  const handleSaveTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const data = { ...testimonialForm, text: testimonialForm.text_de || testimonialForm.text || '' };
+    if (editingTestimonial) {
+      const { id, created_at, ...upd } = data as any;
+      const { error } = await supabase.from('testimonials').update(upd).eq('id', editingTestimonial.id);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'Testimonial updated!'); setEditingTestimonial(null); setTestimonialForm(blankTestimonial); refreshData(); }
+    } else {
+      const { id, created_at, ...ins } = data as any;
+      const { error } = await supabase.from('testimonials').insert([ins]);
+      if (error) { addToast('error', error.message); } else { addToast('success', 'Testimonial added!'); setTestimonialForm(blankTestimonial); refreshData(); }
+    }
+    setIsSaving(false);
+  };
+
+  const deleteTestimonial = async (id: string) => {
+    if (!confirm('Delete this testimonial?')) return;
+    await supabase.from('testimonials').delete().eq('id', id);
+    addToast('success', 'Testimonial deleted.'); refreshData();
+  };
+
+  // ── Inquiry Management ──────────────────────────────────────────────────────
+  const deleteInquiry = async (id: string) => {
+    if (!confirm('Delete this inquiry?')) return;
+    await supabase.from('contact_inquiries').delete().eq('id', id);
+    fetchInquiries();
+    addToast('success', 'Inquiry deleted.');
+  };
+
+  // ── Data Export / Import ────────────────────────────────────────────────────
+  const handleExport = async () => {
+    setIsSaving(true);
+    const [s, p, i, sv, f, t] = await Promise.all([
+      supabase.from('site_settings').select('*'),
+      supabase.from('projects').select('*'),
+      supabase.from('contact_inquiries').select('*'),
+      supabase.from('services').select('*'),
+      supabase.from('faqs').select('*'),
+      supabase.from('testimonials').select('*')
+    ]);
+    const backup = { version: '2.0', timestamp: new Date().toISOString(), site_settings: s.data || [], projects: p.data || [], services: sv.data || [], faqs: f.data || [], testimonials: t.data || [], contact_inquiries: i.data || [] };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `fj-bauservice-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    addToast('success', 'Backup downloaded!');
+    setIsSaving(false);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm('WARNING: This will overwrite your database. Continue?')) { e.target.value = ''; return; }
+    setIsSaving(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const content = JSON.parse(ev.target?.result as string);
+        if (content.site_settings?.length > 0) {
+          const { id, updated_at, created_at, ...sd } = content.site_settings[0];
+          await supabase.from('site_settings').upsert({ id: 1, ...sd });
         }
-      }
-    }
-
-    const { error } = await supabase.from('projects').delete().eq('id', project.id);
-    if (error) {
-      alert("Error deleting: " + error.message);
-    } else {
-      refreshData();
-    }
+        await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (content.projects?.length) await supabase.from('projects').insert(content.projects.map(({ id, created_at, ...d }: any) => d));
+        if (content.services?.length) {
+          await supabase.from('services').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('services').insert(content.services.map(({ id, created_at, ...d }: any) => d));
+        }
+        if (content.faqs?.length) {
+          await supabase.from('faqs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('faqs').insert(content.faqs.map(({ id, created_at, ...d }: any) => d));
+        }
+        if (content.testimonials?.length) {
+          await supabase.from('testimonials').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('testimonials').insert(content.testimonials.map(({ id, created_at, ...d }: any) => d));
+        }
+        addToast('success', 'Data restored successfully!');
+        refreshData();
+      } catch (err: any) { addToast('error', 'Import error: ' + err.message); }
+      finally { setIsSaving(false); e.target.value = ''; }
+    };
+    reader.readAsText(file);
   };
 
+  // ── Logout ──────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onClose();
   };
 
-  const handleExportData = async () => {
-    try {
-      setIsSaving(true);
-      // Fetch all data from Supabase
-      const { data: settingsData } = await supabase.from('site_settings').select('*');
-      const { data: projectsData } = await supabase.from('projects').select('*');
-      const { data: inquiriesData } = await supabase.from('contact_inquiries').select('*');
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  const tabs = [
+    { id: 'dashboard',    label: 'Dashboard',    icon: <LayoutDashboard size={16} /> },
+    { id: 'hero',         label: 'Hero & Branding', icon: <Home size={16} /> },
+    { id: 'services',     label: 'Services',     icon: <Zap size={16} /> },
+    { id: 'projects',     label: 'Projects',     icon: <Briefcase size={16} /> },
+    { id: 'faqs',         label: 'FAQs',         icon: <HelpCircle size={16} /> },
+    { id: 'testimonials', label: 'Testimonials', icon: <Star size={16} /> },
+    { id: 'contact',      label: 'Contact & SEO', icon: <Globe size={16} /> },
+    { id: 'inquiries',    label: 'Inquiries',    icon: <Mail size={16} /> },
+    { id: 'data',         label: 'Backup & Data', icon: <Database size={16} /> },
+  ] as const;
 
-      const backup = {
-        version: '1.0',
-        timestamp: new Date().toISOString(),
-        site_settings: settingsData || [],
-        projects: projectsData || [],
-        contact_inquiries: inquiriesData || []
-      };
-
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `fj-bauservice-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      alert(lang === 'de' ? 'Backup erfolgreich erstellt!' : 'Backup created successfully!');
-    } catch (error: any) {
-      alert("Export Error: " + error.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!confirm(lang === 'de' 
-      ? 'ACHTUNG: Dies wird Ihre aktuellen Daten überschreiben. Fortfahren?' 
-      : 'WARNING: This will overwrite your current database data. Continue?')) {
-      e.target.value = '';
-      return;
-    }
-
-    setIsRestoring(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const content = JSON.parse(event.target?.result as string);
-        
-        // Basic Validation
-        if (!content.site_settings || !content.projects) {
-          throw new Error("Invalid backup file structure.");
-        }
-
-        // 1. Restore Settings
-        if (content.site_settings.length > 0) {
-          const { id, updated_at, created_at, ...settingsToUpdate } = content.site_settings[0];
-          await supabase.from('site_settings').upsert({ id: 1, ...settingsToUpdate });
-        }
-
-        // 2. Restore Projects
-        // First delete existing ones to avoid confusion, or upsert if IDs match
-        // We'll delete and re-insert for a clean restore
-        await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        if (content.projects.length > 0) {
-          const projectsToInsert = content.projects.map((p: any) => {
-            const { id, created_at, ...data } = p;
-            return data;
-          });
-          await supabase.from('projects').insert(projectsToInsert);
-        }
-
-        // 3. Restore Inquiries
-        if (content.contact_inquiries && content.contact_inquiries.length > 0) {
-          await supabase.from('contact_inquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          const inquiriesToInsert = content.contact_inquiries.map((i: any) => {
-            const { id, created_at, ...data } = i;
-            return data;
-          });
-          await supabase.from('contact_inquiries').insert(inquiriesToInsert);
-        }
-
-        alert(lang === 'de' ? 'Daten erfolgreich wiederhergestellt!' : 'Data restored successfully!');
-        refreshData();
-        if (activeTab === 'inquiries') fetchInquiries();
-      } catch (error: any) {
-        console.error("Import Error:", error);
-        alert("Import Error: " + error.message);
-      } finally {
-        setIsRestoring(false);
-        e.target.value = '';
-      }
-    };
-    reader.readAsText(file);
+  const iconMap: Record<string, string> = {
+    Hammer: '🔨', Drill: '🔩', Building2: '🏢', Truck: '🚛', Construction: '🏗️', Zap: '⚡', ShieldCheck: '🛡️', Clock: '⏱️', Star: '⭐', Award: '🏆'
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-surface-dark/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
-    >
-      <div className="bg-surface-card border border-surface-border w-full max-w-6xl h-full max-h-[850px] flex flex-col md:flex-row overflow-hidden shadow-2xl relative">
-        
-        {/* Mobile Header (Hidden on Laptop) */}
-        <div className="md:hidden flex items-center justify-between p-4 bg-surface-dark border-b border-surface-border">
-          <h2 className="heading-dynamic text-primary text-xl">C-PANEL</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-text-main p-2">
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Sidebar */}
-        <div className="w-full md:w-64 bg-surface-dark border-r border-surface-border flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto scrollbar-none">
-          <div className="hidden md:flex p-6 flex-col gap-8">
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/97 backdrop-blur-2xl flex overflow-hidden"
+        style={{ fontFamily: "'Montserrat', sans-serif" }}
+      >
+        {/* ── Sidebar ── */}
+        <aside className={`
+          fixed md:relative inset-y-0 left-0 z-50 
+          w-72 bg-[#080808] border-r border-[#1a1a1a] flex flex-col shrink-0 
+          transition-transform duration-300
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
+          {/* Brand */}
+          <div className="p-6 border-b border-[#1a1a1a]">
             <div className="flex items-center justify-between">
-              <h2 className="heading-dynamic text-primary text-2xl">C-PANEL</h2>
-              <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-text-main"><X /></button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-sm">
+                    <Settings size={16} className="text-black" />
+                  </div>
+                  <span className="font-black text-lg uppercase tracking-widest text-white">C·PANEL</span>
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-1 font-bold uppercase tracking-widest">FJ Bauservice CMS</p>
+              </div>
+              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-zinc-600 hover:text-white">
+                <X size={20} />
+              </button>
             </div>
           </div>
-          
-          <nav className="flex flex-row md:flex-col gap-2 p-4 md:p-6 min-w-max md:min-w-0">
-            {[
-              { id: 'settings', label: lang === 'de' ? 'Webseiten-Info' : 'Site Info', icon: <LayoutDashboard size={18} /> },
-              { id: 'projects', label: lang === 'de' ? 'Projekte' : 'Projects', icon: <Briefcase size={18} /> },
-              { id: 'inquiries', label: lang === 'de' ? 'Anfragen' : 'Inquiries', icon: <Mail size={18} /> },
-              { id: 'data', label: lang === 'de' ? 'Daten & Backup' : 'Data & Backup', icon: <Save size={18} /> },
-            ].map(tab => (
+
+          {/* Nav */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-none">
+            {tabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id as any); cancelEdit(); }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-[10px] md:text-xs tracking-widest transition-all whitespace-nowrap ${
-                  activeTab === tab.id ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main hover:bg-surface-card'
+                onClick={() => { setActiveTab(tab.id as TabId); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-left transition-all group ${
+                  activeTab === tab.id
+                    ? 'bg-primary text-black font-black'
+                    : 'text-zinc-500 hover:text-white hover:bg-[#111] font-bold'
                 }`}
               >
-                {tab.icon} {tab.label}
+                <span className={activeTab === tab.id ? 'text-black' : 'text-zinc-600 group-hover:text-primary'}>
+                  {tab.icon}
+                </span>
+                <span className="text-[11px] uppercase tracking-widest">{tab.label}</span>
+                {tab.id === 'inquiries' && stats.inquiries > 0 && (
+                  <span className="ml-auto bg-primary text-black text-[9px] font-black px-2 py-0.5 rounded-full">
+                    {stats.inquiries}
+                  </span>
+                )}
               </button>
             ))}
-            
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-sm font-bold uppercase text-[10px] md:text-xs tracking-widest text-red-500 hover:bg-red-500/10 transition-all md:mt-4 border border-red-500/20 whitespace-nowrap"
-            >
-              <LogOut size={18} /> {lang === 'de' ? 'Abmelden' : 'Logout'}
-            </button>
           </nav>
 
-          <div className="hidden md:flex mt-auto p-6">
-            <button onClick={onClose} className="flex items-center gap-2 text-zinc-500 hover:text-text-main text-xs font-bold uppercase tracking-widest">
-              <X size={16} /> {lang === 'de' ? 'Schließen' : 'Close'}
+          {/* Bottom */}
+          <div className="p-4 border-t border-[#1a1a1a] space-y-2">
+            <a
+              href="/"
+              target="_blank"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-zinc-500 hover:text-white hover:bg-[#111] transition-all font-bold text-[11px] uppercase tracking-widest"
+            >
+              <ExternalLink size={16} className="text-zinc-600" />
+              View Website
+            </a>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-red-500/80 hover:text-red-400 hover:bg-red-500/10 transition-all font-bold text-[11px] uppercase tracking-widest border border-red-500/20"
+            >
+              <LogOut size={16} />
+              Logout
             </button>
           </div>
-        </div>
+        </aside>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-12">
-          
-          {activeTab === 'settings' && (
-            <div className="space-y-10 md:space-y-12">
-              <div className="space-y-2">
-                <h3 className="heading-dynamic text-2xl md:text-4xl">{lang === 'de' ? 'Webseiten-Einstellungen' : 'Website Settings'}</h3>
-                <p className="text-text-muted text-[11px] md:text-sm">{lang === 'de' ? 'Verwalten Sie die globalen Inhalte und Bilder Ihrer Webseite.' : 'Manage global content and images of your website.'}</p>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        {/* ── Main Content ── */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Bar */}
+          <header className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] bg-[#080808] shrink-0">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-2 text-zinc-500 hover:text-white"
+              >
+                <Layers size={20} />
+              </button>
+              <div>
+                <h2 className="font-black uppercase tracking-widest text-white text-sm">
+                  {tabs.find(t => t.id === activeTab)?.label}
+                </h2>
+                <p className="text-[10px] text-zinc-600">
+                  {new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-sm px-3 py-1.5">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Live</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 text-zinc-500 hover:text-white hover:bg-[#111] rounded-sm transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </header>
 
-              <form onSubmit={handleUpdateSettings} className="space-y-10 md:space-y-12">
-                {/* Content Section */}
-                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Firmenname' : 'Company Name'}</label>
-                    <input 
-                      type="text" value={settingsForm.name || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, name: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
-                    />
-                  </div>
-                  <div className="hidden md:block" />
-                  
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (DE)' : 'Slogan (DE)'}</label>
-                    <input 
-                      type="text" value={settingsForm.slogan_de || settingsForm.slogan || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, slogan_de: e.target.value, slogan: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
-                    />
-                  </div>
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Slogan (EN)' : 'Slogan (EN)'}</label>
-                    <input 
-                      type="text" value={settingsForm.slogan_en || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, slogan_en: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
-                    />
-                  </div>
+          {/* Content */}
+          <main className="flex-1 overflow-y-auto p-6 md:p-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+              >
 
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (DE)' : 'Description (DE)'}</label>
-                    <textarea 
-                      rows={3} value={settingsForm.description_de || settingsForm.description || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, description_de: e.target.value, description: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none text-sm" 
+                {/* ──────── DASHBOARD ──────── */}
+                {activeTab === 'dashboard' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<LayoutDashboard size={20} />}
+                      title="Dashboard"
+                      subtitle="Overview of your website content and recent activity."
                     />
-                  </div>
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Beschreibung (EN)' : 'Description (EN)'}</label>
-                    <textarea 
-                      rows={3} value={settingsForm.description_en || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, description_en: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors resize-none text-sm" 
-                    />
-                  </div>
 
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Telefon' : 'Phone'}</label>
-                    <input 
-                      type="text" value={settingsForm.phone || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, phone: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
-                    />
-                  </div>
-                  <div className="space-y-3 md:space-y-4">
-                    <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-primary">{lang === 'de' ? 'Email' : 'Email'}</label>
-                    <input 
-                      type="email" value={settingsForm.email || ''} 
-                      onChange={e => setSettingsForm({...settingsForm, email: e.target.value})}
-                      className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none transition-colors text-sm" 
-                    />
-                  </div>
-                </div>
-
-                {/* Location Section */}
-                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Standort & Adresse' : 'Location & Address'}</h4>
-                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{lang === 'de' ? 'Adresse (Deutsch)' : 'Address (German)'}</label>
-                      <input 
-                        type="text" value={settingsForm.address_de || settingsForm.address || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, address_de: e.target.value})}
-                        placeholder="Musterstraße 1, 83022 Rosenheim"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{lang === 'de' ? 'Adresse (Englisch)' : 'Address (English)'}</label>
-                      <input 
-                        type="text" value={settingsForm.address_en || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, address_en: e.target.value})}
-                        placeholder="123 Example St, 83022 Rosenheim, Germany"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-text-muted/30" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Google Maps Embed URL / Code' : 'Google Maps Embed URL / Code'}</label>
-                      <textarea 
-                        rows={2}
-                        value={settingsForm.google_maps_url || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, google_maps_url: e.target.value})}
-                        placeholder={lang === 'de' ? 'https://www.google.com/maps/embed?... ODER <iframe...>' : 'https://www.google.com/maps/embed?... OR <iframe...>'}
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm placeholder:text-zinc-700 resize-none" 
-                      />
-                      <p className="text-[9px] text-zinc-600 italic leading-tight">
-                        {lang === 'de' 
-                          ? 'Gehen Sie auf Google Maps -> Teilen -> Karte einbetten. Kopieren Sie den gesamten <iframe...> Tag oder nur den Link im src-Attribut.' 
-                          : 'Go to Google Maps -> Share -> Embed map. Copy either the whole <iframe...> tag or just the URL from the src attribute.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Statistiken' : 'Statistics'}</h4>
-                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Jahre Erfahrung' : 'Years Experience'}</label>
-                      <input 
-                        type="text" value={settingsForm.stats_years || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, stats_years: e.target.value})}
-                        placeholder="15+"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm" 
-                      />
-                    </div>
-                    <div className="space-y-3 md:space-y-4">
-                      <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{lang === 'de' ? 'Abgeschlossene Projekte' : 'Completed Projects'}</label>
-                      <input 
-                        type="text" value={settingsForm.stats_projects || ''} 
-                        onChange={e => setSettingsForm({...settingsForm, stats_projects: e.target.value})}
-                        placeholder="500+"
-                        className="w-full bg-surface-dark border border-surface-border p-3 md:p-4 rounded-sm focus:border-primary outline-none text-sm" 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image Section */}
-                <div className="space-y-6 md:space-y-8 bg-surface-dark/40 p-4 md:p-8 border border-surface-border rounded-sm">
-                  <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary">{lang === 'de' ? 'Seiten-Bilder' : 'Site Images'}</h4>
-                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    {[
-                      { id: 'hero_image_url', label: lang === 'de' ? 'Hero Hintergrund' : 'Hero Background' },
-                      { id: 'about_image_url', label: lang === 'de' ? 'Über Uns Bild' : 'About Us Image' },
-                      { id: 'cta_image_url', label: lang === 'de' ? 'CTA Hintergrund' : 'CTA Background' },
-                      { id: 'contact_image_url', label: lang === 'de' ? 'Kontakt Bild' : 'Contact Image' },
-                    ].map(img => (
-                      <div key={img.id} className="space-y-3 md:space-y-4">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">{img.label}</label>
-                          <label className="cursor-pointer text-[9px] md:text-[10px] text-primary hover:underline font-bold flex items-center gap-1">
-                            {isUploading === img.id ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />} 
-                            {isUploading === img.id ? (lang === 'de' ? '...' : '...') : (lang === 'de' ? 'Upload' : 'Upload')}
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(img.id, e)} disabled={!!isUploading} />
-                          </label>
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                        { label: 'Projects', value: stats.projects, icon: <Briefcase size={20} />, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+                        { label: 'Services', value: stats.services, icon: <Zap size={20} />, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
+                        { label: 'FAQs', value: stats.faqs, icon: <HelpCircle size={20} />, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
+                        { label: 'Testimonials', value: stats.testimonials, icon: <Star size={20} />, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
+                      ].map(s => (
+                        <div key={s.label} className={`border rounded-sm p-6 ${s.bg}`}>
+                          <div className={`${s.color} mb-3`}>{s.icon}</div>
+                          <div className="text-3xl font-black text-white">{s.value}</div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1">{s.label}</div>
                         </div>
-                        <input 
-                          type="text" value={settingsForm[img.id] || ''} 
-                          onChange={e => setSettingsForm({...settingsForm, [img.id]: e.target.value})}
-                          placeholder="https://..."
-                          className="w-full bg-surface-dark border border-surface-border p-2.5 md:p-3 rounded-sm focus:border-primary outline-none text-[11px] md:text-xs" 
-                        />
-                        {settingsForm[img.id] && (
-                          <div className="aspect-video w-full bg-surface-card rounded-sm overflow-hidden border border-surface-border">
-                            <img src={settingsForm[img.id]} alt="" className="w-full h-full object-cover opacity-50" />
-                          </div>
-                        )}
-                        {renderImageHistory(img.id, false)}
+                      ))}
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4">Quick Actions</h4>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {[
+                          { label: 'Edit Hero Section', tab: 'hero' as TabId, icon: <Home size={18} />, desc: 'Update headline, images, stats' },
+                          { label: 'Add New Project', tab: 'projects' as TabId, icon: <Plus size={18} />, desc: 'Upload project with images' },
+                          { label: 'Manage FAQs', tab: 'faqs' as TabId, icon: <HelpCircle size={18} />, desc: 'Add or edit FAQ items' },
+                          { label: 'View Inquiries', tab: 'inquiries' as TabId, icon: <Mail size={18} />, desc: 'See contact form messages' },
+                          { label: 'SEO Settings', tab: 'contact' as TabId, icon: <Search size={18} />, desc: 'Update meta tags & SEO' },
+                          { label: 'Backup Data', tab: 'data' as TabId, icon: <Download size={18} />, desc: 'Export all website data' },
+                        ].map(a => (
+                          <button
+                            key={a.tab}
+                            onClick={() => setActiveTab(a.tab)}
+                            className="flex items-start gap-4 p-5 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm hover:border-primary/50 hover:bg-[#111] transition-all text-left group"
+                          >
+                            <div className="p-2 bg-primary/10 border border-primary/20 rounded-sm text-primary group-hover:bg-primary group-hover:text-black transition-colors shrink-0">
+                              {a.icon}
+                            </div>
+                            <div>
+                              <div className="text-sm font-black text-white">{a.label}</div>
+                              <div className="text-[10px] text-zinc-600 mt-0.5">{a.desc}</div>
+                            </div>
+                          </button>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* SQL Setup Box */}
+                    <div className="border border-primary/20 bg-primary/5 rounded-sm p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Database size={18} className="text-primary" />
+                        <h4 className="font-black text-sm uppercase tracking-widest text-primary">Database Setup Required</h4>
+                      </div>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        Run this SQL in your Supabase SQL Editor to enable all CMS features (services, FAQs, testimonials, SEO):
+                      </p>
+                      <SqlSetupBox />
+                    </div>
                   </div>
-                </div>
-                
-                <button 
-                  type="submit" disabled={isSaving || !!isUploading}
-                  className="w-full button-primary justify-center gap-2 disabled:opacity-50"
-                >
-                  {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-                  {lang === 'de' ? 'Einstellungen speichern' : 'Save Settings'}
-                </button>
+                )}
 
-                {/* Optional SQL Fix Help */}
-                <div className="mt-12 border-t border-surface-border pt-8">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowDatabaseHelp(!showDatabaseHelp)}
-                    className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-primary transition-colors flex items-center gap-2"
-                  >
-                    <LayoutDashboard size={14} />
-                    {showDatabaseHelp 
-                      ? (lang === 'de' ? 'Setup-Passwort verbergen' : 'Hide Database Setup') 
-                      : (lang === 'de' ? 'Troubleshooting: Datenbank-Setup anzeigen' : 'Troubleshooting: Show Database Setup')}
-                  </button>
+                {/* ──────── HERO & BRANDING ──────── */}
+                {activeTab === 'hero' && (
+                  <form onSubmit={handleSaveSettings} className="space-y-10">
+                    <SectionHeader
+                      icon={<Home size={20} />}
+                      title="Hero & Branding"
+                      subtitle="Control your website's main headline, logo, images, and brand identity."
+                    />
 
-                  <AnimatePresence>
-                    {showDatabaseHelp && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-sm space-y-4">
-                          <p className="text-[10px] text-zinc-500 leading-relaxed font-bold border-b border-primary/20 pb-2 mb-2">
-                            {lang === 'de' 
-                              ? 'WICHTIG: Nach dem Ausführen des SQLs müssen Sie in Supabase unter "Settings -> API" auf "Reload Schema" klicken!'
-                              : 'IMPORTANT: After running this SQL, you MUST click "Reload Schema" in Supabase under "Settings -> API"!'}
+                    {/* Company Identity */}
+                    <div className="grid md:grid-cols-2 gap-6 p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm">
+                      <div className="md:col-span-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">🏢 Company Identity</h4>
+                      </div>
+                      <Field label="Company Name" required>
+                        <input type="text" value={settingsForm.name || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, name: e.target.value }))} className={inputCls} placeholder="FJ BAUSERVICE" />
+                      </Field>
+                      <Field label="Logo URL">
+                        <input type="text" value={settingsForm.logo_url || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, logo_url: e.target.value }))} className={inputCls} placeholder="https://..." />
+                      </Field>
+                      <div className="md:col-span-2">
+                        <BilingualInput
+                          labelDe="Slogan (Deutsch)" labelEn="Slogan (English)"
+                          valueDe={settingsForm.slogan_de || settingsForm.slogan || ''} valueEn={settingsForm.slogan_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, slogan_de: v, slogan: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, slogan_en: v }))}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <BilingualInput
+                          labelDe="Beschreibung (Deutsch)" labelEn="Description (English)"
+                          valueDe={settingsForm.description_de || settingsForm.description || ''} valueEn={settingsForm.description_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, description_de: v, description: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, description_en: v }))}
+                          textarea rows={3}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hero Section */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🦸 Hero Section Text</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <BilingualInput
+                          labelDe="Hero Überschrift (DE)" labelEn="Hero Headline (EN)"
+                          valueDe={settingsForm.hero_heading_de || ''} valueEn={settingsForm.hero_heading_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, hero_heading_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, hero_heading_en: v }))}
+                        />
+                        <BilingualInput
+                          labelDe="Hero Untertitel (DE)" labelEn="Hero Subtext (EN)"
+                          valueDe={settingsForm.hero_subtext_de || ''} valueEn={settingsForm.hero_subtext_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, hero_subtext_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, hero_subtext_en: v }))}
+                          textarea rows={2}
+                        />
+                        <Field label="Hero Button Text (DE)">
+                          <input type="text" value={settingsForm.hero_button_de || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hero_button_de: e.target.value }))} className={inputCls} placeholder="Angebot anfordern" />
+                        </Field>
+                        <Field label="Hero Button Text (EN)">
+                          <input type="text" value={settingsForm.hero_button_en || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hero_button_en: e.target.value }))} className={inputCls} placeholder="Request Quote" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    {/* Statistics */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📊 Hero Statistics</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Field label="Years of Experience" hint="e.g. 15+">
+                          <input type="text" value={settingsForm.stats_years || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, stats_years: e.target.value }))} className={inputCls} placeholder="15+" />
+                        </Field>
+                        <Field label="Completed Projects" hint="e.g. 500+">
+                          <input type="text" value={settingsForm.stats_projects || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, stats_projects: e.target.value }))} className={inputCls} placeholder="500+" />
+                        </Field>
+                        <Field label="Stat Label 1 (DE)">
+                          <input type="text" value={settingsForm.stat_label_1_de || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, stat_label_1_de: e.target.value }))} className={inputCls} placeholder="Jahre Facherfahrung" />
+                        </Field>
+                        <Field label="Stat Label 2 (DE)">
+                          <input type="text" value={settingsForm.stat_label_2_de || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, stat_label_2_de: e.target.value }))} className={inputCls} placeholder="Referenzprojekte" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    {/* Images */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🖼️ Website Images</h4>
+                      <div className="grid md:grid-cols-2 gap-8">
+                        {[
+                          { id: 'logo_url', label: 'Company Logo' },
+                          { id: 'hero_image_url', label: 'Hero Background Image' },
+                          { id: 'about_image_url', label: 'About Us Image' },
+                          { id: 'cta_image_url', label: 'CTA Background Image' },
+                          { id: 'contact_image_url', label: 'Contact Section Image' },
+                          { id: 'footer_image_url', label: 'Footer Image' },
+                        ].map(img => (
+                          <ImageUploadField
+                            key={img.id}
+                            label={img.label}
+                            fieldKey={img.id}
+                            value={settingsForm[img.id] || ''}
+                            isUploading={isUploading}
+                            onUpload={uploadAndSetSettings}
+                            onChange={v => setSettingsForm((p: any) => ({ ...p, [img.id]: v }))}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* CTA Section Text */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📣 CTA Section</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <BilingualInput
+                          labelDe="CTA Titel (DE)" labelEn="CTA Title (EN)"
+                          valueDe={settingsForm.cta_title_de || ''} valueEn={settingsForm.cta_title_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, cta_title_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, cta_title_en: v }))}
+                        />
+                        <BilingualInput
+                          labelDe="CTA Untertitel (DE)" labelEn="CTA Subtitle (EN)"
+                          valueDe={settingsForm.cta_subtitle_de || ''} valueEn={settingsForm.cta_subtitle_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, cta_subtitle_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, cta_subtitle_en: v }))}
+                          textarea rows={2}
+                        />
+                        <Field label="CTA Button Text (DE)">
+                          <input type="text" value={settingsForm.cta_button_de || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, cta_button_de: e.target.value }))} className={inputCls} placeholder="Jetzt Angebot anfordern" />
+                        </Field>
+                        <Field label="CTA Button Text (EN)">
+                          <input type="text" value={settingsForm.cta_button_en || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, cta_button_en: e.target.value }))} className={inputCls} placeholder="Request Quote Now" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} />
+                  </form>
+                )}
+
+                {/* ──────── SERVICES ──────── */}
+                {activeTab === 'services' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<Zap size={20} />}
+                      title="Services Management"
+                      subtitle="Add, edit, or remove the services displayed on your website."
+                    />
+
+                    <form onSubmit={handleSaveService} className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        {editingService ? '✏️ Edit Service' : '➕ New Service'}
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <BilingualInput
+                          labelDe="Service-Titel (DE)" labelEn="Service Title (EN)"
+                          valueDe={serviceForm.title_de || serviceForm.title || ''} valueEn={serviceForm.title_en || ''}
+                          onChangeDe={v => setServiceForm(p => ({ ...p, title_de: v, title: v }))}
+                          onChangeEn={v => setServiceForm(p => ({ ...p, title_en: v }))}
+                          required
+                        />
+                        <Field label="Icon Name" hint="Hammer, Drill, Building2, Truck, Construction, Zap, ShieldCheck, Star, Award">
+                          <div className="flex gap-2">
+                            <select
+                              value={serviceForm.icon_name || 'Hammer'}
+                              onChange={e => setServiceForm(p => ({ ...p, icon_name: e.target.value }))}
+                              className={inputCls}
+                            >
+                              {['Hammer', 'Drill', 'Building2', 'Truck', 'Construction', 'Zap', 'ShieldCheck', 'Clock', 'Star', 'Award'].map(ic => (
+                                <option key={ic} value={ic}>{iconMap[ic] || '🔧'} {ic}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </Field>
+                        <div className="md:col-span-2">
+                          <BilingualInput
+                            labelDe="Beschreibung (DE)" labelEn="Description (EN)"
+                            valueDe={serviceForm.description_de || serviceForm.description || ''} valueEn={serviceForm.description_en || ''}
+                            onChangeDe={v => setServiceForm(p => ({ ...p, description_de: v, description: v }))}
+                            onChangeEn={v => setServiceForm(p => ({ ...p, description_en: v }))}
+                            textarea rows={4}
+                          />
+                        </div>
+                        <Field label="Sort Order" hint="Lower numbers appear first">
+                          <input type="number" value={serviceForm.sort_order || 0} onChange={e => setServiceForm(p => ({ ...p, sort_order: parseInt(e.target.value) }))} className={inputCls} />
+                        </Field>
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingService ? <Save size={16} /> : <Plus size={16} />)}
+                          {editingService ? 'Update Service' : 'Add Service'}
+                        </button>
+                        {editingService && (
+                          <button type="button" onClick={() => { setEditingService(null); setServiceForm(blankService); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </form>
+
+                    {/* Services List */}
+                    <div className="space-y-3">
+                      {services.length === 0 ? (
+                        <EmptyState label="No services yet. Add your first service above." />
+                      ) : services.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(svc => (
+                        <div key={svc.id} className="flex items-center gap-4 p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm group hover:border-[#333] transition-colors">
+                          <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-sm flex items-center justify-center text-lg shrink-0">
+                            {iconMap[svc.icon_name] || '🔧'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-black text-sm text-white">{svc.title_de || svc.title}</h5>
+                            <p className="text-[11px] text-zinc-500 truncate mt-0.5">{svc.description_de || svc.description}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => { setEditingService(svc); const c: any = {}; Object.keys(svc).forEach(k => { c[k] = svc[k] ?? ''; }); setServiceForm(c); }}
+                              className="p-2 text-zinc-500 hover:text-primary rounded-sm hover:bg-[#111] transition-colors">
+                              <Pencil size={16} />
+                            </button>
+                            <button onClick={() => deleteService(svc.id)} className="p-2 text-zinc-500 hover:text-red-500 rounded-sm hover:bg-[#111] transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ──────── PROJECTS ──────── */}
+                {activeTab === 'projects' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<Briefcase size={20} />}
+                      title="Project Management"
+                      subtitle="Manage your project portfolio with images, titles, and categories."
+                    />
+
+                    <form onSubmit={handleSaveProject} className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        {editingProject ? '✏️ Edit Project' : '➕ New Project'}
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <BilingualInput
+                          labelDe="Projekt-Titel (DE)" labelEn="Project Title (EN)"
+                          valueDe={projectForm.title_de || projectForm.title || ''} valueEn={projectForm.title_en || ''}
+                          onChangeDe={v => setProjectForm(p => ({ ...p, title_de: v, title: v }))}
+                          onChangeEn={v => setProjectForm(p => ({ ...p, title_en: v }))}
+                          required
+                        />
+                        <BilingualInput
+                          labelDe="Kategorie (DE)" labelEn="Category (EN)"
+                          valueDe={projectForm.category_de || projectForm.category || ''} valueEn={projectForm.category_en || ''}
+                          onChangeDe={v => setProjectForm(p => ({ ...p, category_de: v, category: v }))}
+                          onChangeEn={v => setProjectForm(p => ({ ...p, category_en: v }))}
+                          required
+                        />
+                        <div className="md:col-span-2">
+                          <BilingualInput
+                            labelDe="Beschreibung (DE)" labelEn="Description (EN)"
+                            valueDe={projectForm.description_de || projectForm.description || ''} valueEn={projectForm.description_en || ''}
+                            onChangeDe={v => setProjectForm(p => ({ ...p, description_de: v, description: v }))}
+                            onChangeEn={v => setProjectForm(p => ({ ...p, description_en: v }))}
+                            textarea rows={3}
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <ImageUploadField
+                            label="Project Image"
+                            fieldKey="project_image"
+                            value={projectForm.image_url}
+                            isUploading={isUploading}
+                            onUpload={async (field, file) => {
+                              const url = await handleImageUpload(field, file);
+                              if (url) setProjectForm(p => ({ ...p, image_url: url }));
+                            }}
+                            onChange={v => setProjectForm(p => ({ ...p, image_url: v }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={isSaving || !!isUploading} className="button-primary disabled:opacity-50">
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingProject ? <Save size={16} /> : <Plus size={16} />)}
+                          {editingProject ? 'Update Project' : 'Add Project'}
+                        </button>
+                        {editingProject && (
+                          <button type="button" onClick={() => { setEditingProject(null); setProjectForm(blankProject); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </form>
+
+                    {/* Projects Grid */}
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {projects.length === 0 ? (
+                        <div className="sm:col-span-2 lg:col-span-3">
+                          <EmptyState label="No projects yet. Add your first project above." />
+                        </div>
+                      ) : projects.map(project => (
+                        <div key={project.id} className="bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm overflow-hidden group hover:border-[#333] transition-colors">
+                          <div className="relative aspect-video">
+                            <img src={project.image_url} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  setEditingProject(project);
+                                  const c: any = {};
+                                  Object.keys(project).forEach(k => { c[k] = project[k] ?? ''; });
+                                  setProjectForm(c);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className="p-2 bg-primary text-black rounded-sm hover:bg-white transition-colors"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button onClick={() => deleteProject(project)} className="p-2 bg-red-600 text-white rounded-sm hover:bg-red-500 transition-colors">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-primary">{project.category_de || project.category}</p>
+                              <h5 className="font-black text-sm text-white mt-0.5 truncate">{project.title_de || project.title}</h5>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ──────── FAQS ──────── */}
+                {activeTab === 'faqs' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<HelpCircle size={20} />}
+                      title="FAQ Management"
+                      subtitle="Manage frequently asked questions shown on your website."
+                    />
+
+                    <form onSubmit={handleSaveFaq} className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        {editingFaq ? '✏️ Edit FAQ' : '➕ New FAQ'}
+                      </h4>
+                      <div className="space-y-6">
+                        <BilingualInput
+                          labelDe="Frage (Deutsch)" labelEn="Question (English)"
+                          valueDe={faqForm.question_de || faqForm.question || ''} valueEn={faqForm.question_en || ''}
+                          onChangeDe={v => setFaqForm(p => ({ ...p, question_de: v, question: v }))}
+                          onChangeEn={v => setFaqForm(p => ({ ...p, question_en: v }))}
+                          required
+                        />
+                        <BilingualInput
+                          labelDe="Antwort (Deutsch)" labelEn="Answer (English)"
+                          valueDe={faqForm.answer_de || faqForm.answer || ''} valueEn={faqForm.answer_en || ''}
+                          onChangeDe={v => setFaqForm(p => ({ ...p, answer_de: v, answer: v }))}
+                          onChangeEn={v => setFaqForm(p => ({ ...p, answer_en: v }))}
+                          textarea rows={4}
+                        />
+                        <Field label="Sort Order">
+                          <input type="number" value={faqForm.sort_order || 0} onChange={e => setFaqForm(p => ({ ...p, sort_order: parseInt(e.target.value) }))} className={inputCls} />
+                        </Field>
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingFaq ? <Save size={16} /> : <Plus size={16} />)}
+                          {editingFaq ? 'Update FAQ' : 'Add FAQ'}
+                        </button>
+                        {editingFaq && (
+                          <button type="button" onClick={() => { setEditingFaq(null); setFaqForm(blankFaq); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </form>
+
+                    <div className="space-y-3">
+                      {faqs.length === 0 ? (
+                        <EmptyState label="No FAQs yet. Add your first FAQ above." />
+                      ) : faqs.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((faq, idx) => (
+                        <div key={faq.id} className="p-5 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm group hover:border-[#333] transition-colors">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-1 rounded-sm">#{idx + 1}</span>
+                                <h5 className="font-black text-sm text-white">{faq.question_de || faq.question}</h5>
+                              </div>
+                              <p className="text-xs text-zinc-500 leading-relaxed">{faq.answer_de || faq.answer}</p>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => { setEditingFaq(faq); const c: any = {}; Object.keys(faq).forEach(k => { c[k] = faq[k] ?? ''; }); setFaqForm(c); }}
+                                className="p-2 text-zinc-500 hover:text-primary rounded-sm hover:bg-[#111] transition-colors">
+                                <Pencil size={15} />
+                              </button>
+                              <button onClick={() => deleteFaq(faq.id)} className="p-2 text-zinc-500 hover:text-red-500 rounded-sm hover:bg-[#111] transition-colors">
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ──────── TESTIMONIALS ──────── */}
+                {activeTab === 'testimonials' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<Star size={20} />}
+                      title="Testimonials"
+                      subtitle="Manage customer reviews and testimonials."
+                    />
+
+                    <form onSubmit={handleSaveTestimonial} className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        {editingTestimonial ? '✏️ Edit Testimonial' : '➕ New Testimonial'}
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Field label="Author Name" required>
+                          <input type="text" value={testimonialForm.author || ''} onChange={e => setTestimonialForm((p: any) => ({ ...p, author: e.target.value }))} className={inputCls} placeholder="Max Mustermann" />
+                        </Field>
+                        <Field label="Company / Role">
+                          <input type="text" value={testimonialForm.company || ''} onChange={e => setTestimonialForm((p: any) => ({ ...p, company: e.target.value }))} className={inputCls} placeholder="Bauunternehmen GmbH" />
+                        </Field>
+                        <Field label="Rating (1-5)">
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <button key={n} type="button"
+                                onClick={() => setTestimonialForm((p: any) => ({ ...p, rating: n }))}
+                                className={`p-2 rounded-sm transition-colors ${(testimonialForm.rating || 5) >= n ? 'text-primary' : 'text-zinc-600'} hover:text-primary`}>
+                                <Star size={20} fill={(testimonialForm.rating || 5) >= n ? 'currentColor' : 'none'} />
+                              </button>
+                            ))}
+                          </div>
+                        </Field>
+                        <div className="md:col-span-2">
+                          <BilingualInput
+                            labelDe="Bewertungstext (DE)" labelEn="Review Text (EN)"
+                            valueDe={testimonialForm.text_de || testimonialForm.text || ''} valueEn={testimonialForm.text_en || ''}
+                            onChangeDe={v => setTestimonialForm((p: any) => ({ ...p, text_de: v, text: v }))}
+                            onChangeEn={v => setTestimonialForm((p: any) => ({ ...p, text_en: v }))}
+                            textarea rows={3}
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <ImageUploadField
+                            label="Author Avatar (optional)"
+                            fieldKey="testimonial_avatar"
+                            value={testimonialForm.avatar_url || ''}
+                            isUploading={isUploading}
+                            onUpload={async (field, file) => {
+                              const url = await handleImageUpload(field, file);
+                              if (url) setTestimonialForm((p: any) => ({ ...p, avatar_url: url }));
+                            }}
+                            onChange={v => setTestimonialForm((p: any) => ({ ...p, avatar_url: v }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingTestimonial ? <Save size={16} /> : <Plus size={16} />)}
+                          {editingTestimonial ? 'Update Testimonial' : 'Add Testimonial'}
+                        </button>
+                        {editingTestimonial && (
+                          <button type="button" onClick={() => { setEditingTestimonial(null); setTestimonialForm(blankTestimonial); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </form>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {testimonials.length === 0 ? (
+                        <div className="md:col-span-2">
+                          <EmptyState label="No testimonials yet. Add your first one above." />
+                        </div>
+                      ) : testimonials.map(t => (
+                        <div key={t.id} className="p-5 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm group hover:border-[#333] transition-colors">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              {t.avatar_url ? (
+                                <img src={t.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-[#333]" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-black text-sm">
+                                  {(t.author || '?')[0]}
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-black text-sm text-white">{t.author}</div>
+                                <div className="text-[10px] text-zinc-500">{t.company}</div>
+                              </div>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => {
+                                setEditingTestimonial(t);
+                                const c: any = {}; Object.keys(t).forEach(k => { c[k] = t[k] ?? ''; });
+                                setTestimonialForm(c);
+                              }}
+                                className="p-2 text-zinc-500 hover:text-primary rounded-sm hover:bg-[#111] transition-colors"><Pencil size={15} /></button>
+                              <button onClick={() => deleteTestimonial(t.id)} className="p-2 text-zinc-500 hover:text-red-500 rounded-sm hover:bg-[#111] transition-colors"><Trash2 size={15} /></button>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 mt-3">
+                            {[1,2,3,4,5].map(n => <Star key={n} size={13} className={n <= (t.rating || 5) ? 'text-primary fill-primary' : 'text-zinc-700'} />)}
+                          </div>
+                          <p className="text-xs text-zinc-400 mt-2 leading-relaxed italic">&ldquo;{t.text_de || t.text}&rdquo;</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ──────── CONTACT & SEO ──────── */}
+                {activeTab === 'contact' && (
+                  <form onSubmit={handleSaveSettings} className="space-y-10">
+                    <SectionHeader
+                      icon={<Globe size={20} />}
+                      title="Contact & SEO Settings"
+                      subtitle="Update contact details, social links, and search engine optimization settings."
+                    />
+
+                    {/* Contact Details */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📞 Contact Information</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Field label="Phone Number">
+                          <input type="tel" value={settingsForm.phone || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, phone: e.target.value }))} className={inputCls} placeholder="+49 159 06142923" />
+                        </Field>
+                        <Field label="Email Address">
+                          <input type="email" value={settingsForm.email || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, email: e.target.value }))} className={inputCls} placeholder="info@company.de" />
+                        </Field>
+                        <Field label="WhatsApp Number" hint="Include country code e.g. 4915906142923">
+                          <input type="text" value={settingsForm.whatsapp_number || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, whatsapp_number: e.target.value }))} className={inputCls} placeholder="4915906142923" />
+                        </Field>
+                        <div className="space-y-2">
+                          <BilingualInput
+                            labelDe="Adresse (DE)" labelEn="Address (EN)"
+                            valueDe={settingsForm.address_de || settingsForm.address || ''} valueEn={settingsForm.address_en || ''}
+                            onChangeDe={v => setSettingsForm((p: any) => ({ ...p, address_de: v, address: v }))}
+                            onChangeEn={v => setSettingsForm((p: any) => ({ ...p, address_en: v }))}
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Field label="Google Maps URL / Embed Code" hint="Go to Google Maps → Share → Embed map. Paste the URL or entire <iframe> tag here.">
+                            <textarea rows={3} value={settingsForm.google_maps_url || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, google_maps_url: e.target.value }))} className={textareaCls} placeholder="https://www.google.com/maps/embed?..." />
+                          </Field>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Social Media */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📱 Social Media Links</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {[
+                          { id: 'facebook_url', label: 'Facebook URL', ph: 'https://facebook.com/...' },
+                          { id: 'instagram_url', label: 'Instagram URL', ph: 'https://instagram.com/...' },
+                          { id: 'linkedin_url', label: 'LinkedIn URL', ph: 'https://linkedin.com/...' },
+                          { id: 'tiktok_url', label: 'TikTok URL', ph: 'https://tiktok.com/@...' },
+                        ].map(s => (
+                          <Field key={s.id} label={s.label}>
+                            <input type="url" value={settingsForm[s.id] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [s.id]: e.target.value }))} className={inputCls} placeholder={s.ph} />
+                          </Field>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SEO Metadata */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🔍 SEO Metadata</h4>
+                      <div className="space-y-6">
+                        <BilingualInput
+                          labelDe="Meta-Titel (DE)" labelEn="Meta Title (EN)"
+                          valueDe={settingsForm.seo_title_de || ''} valueEn={settingsForm.seo_title_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, seo_title_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, seo_title_en: v }))}
+                        />
+                        <BilingualInput
+                          labelDe="Meta-Beschreibung (DE)" labelEn="Meta Description (EN)"
+                          valueDe={settingsForm.seo_description_de || ''} valueEn={settingsForm.seo_description_en || ''}
+                          onChangeDe={v => setSettingsForm((p: any) => ({ ...p, seo_description_de: v }))}
+                          onChangeEn={v => setSettingsForm((p: any) => ({ ...p, seo_description_en: v }))}
+                          textarea rows={3}
+                        />
+                        <Field label="Keywords (comma separated)" hint="e.g. Abbruch München, Kernbohrung, Entkernung">
+                          <input type="text" value={settingsForm.seo_keywords || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, seo_keywords: e.target.value }))} className={inputCls} />
+                        </Field>
+                        <Field label="OG Image URL" hint="Image shown when sharing on social media (recommended: 1200×630px)">
+                          <input type="url" value={settingsForm.og_image_url || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, og_image_url: e.target.value }))} className={inputCls} placeholder="https://..." />
+                        </Field>
+                      </div>
+                    </div>
+
+                    {/* Opening Hours */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🕐 Opening Hours</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Field label="Weekdays (Mon–Fri)">
+                          <input type="text" value={settingsForm.hours_weekdays || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_weekdays: e.target.value }))} className={inputCls} placeholder="07:00 – 18:00" />
+                        </Field>
+                        <Field label="Saturday">
+                          <input type="text" value={settingsForm.hours_saturday || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_saturday: e.target.value }))} className={inputCls} placeholder="08:00 – 14:00" />
+                        </Field>
+                        <Field label="Sunday">
+                          <input type="text" value={settingsForm.hours_sunday || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_sunday: e.target.value }))} className={inputCls} placeholder="Geschlossen" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} />
+                  </form>
+                )}
+
+                {/* ──────── INQUIRIES ──────── */}
+                {activeTab === 'inquiries' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<Mail size={20} />}
+                      title="Contact Inquiries"
+                      subtitle="View and manage messages received through the contact form."
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500 font-bold">{inquiries.length} {inquiries.length === 1 ? 'inquiry' : 'inquiries'}</span>
+                      <button onClick={fetchInquiries} className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors">
+                        <RefreshCw size={14} /> Refresh
+                      </button>
+                    </div>
+                    {loadingInquiries ? (
+                      <div className="flex justify-center py-20">
+                        <Loader2 className="animate-spin text-primary" size={40} />
+                      </div>
+                    ) : inquiries.length === 0 ? (
+                      <EmptyState label="No inquiries yet. They will appear here when customers contact you." />
+                    ) : (
+                      <div className="space-y-4">
+                        {inquiries.map(inq => (
+                          <div key={inq.id} className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm group hover:border-[#333] transition-colors relative">
+                            <button
+                              onClick={() => deleteInquiry(inq.id)}
+                              className="absolute top-5 right-5 p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                            <div className="flex flex-wrap gap-3 items-center mb-4">
+                              <span className="text-primary font-black text-sm">{inq.name}</span>
+                              <span className="text-zinc-600 text-xs">•</span>
+                              <a href={`mailto:${inq.email}`} className="text-zinc-400 text-xs hover:text-primary transition-colors">{inq.email}</a>
+                              <span className="text-zinc-600 text-xs">•</span>
+                              <span className="text-zinc-600 text-[10px]">
+                                {new Date(inq.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            {inq.subject && <h5 className="font-black text-sm text-white mb-2">{inq.subject}</h5>}
+                            <p className="text-sm text-zinc-400 leading-relaxed">{inq.message}</p>
+                            <div className="flex gap-3 mt-4">
+                              <a href={`mailto:${inq.email}?subject=Re: ${inq.subject || 'Ihre Anfrage'}`}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white border border-primary/30 hover:border-white px-3 py-2 rounded-sm transition-colors">
+                                <Mail size={12} /> Reply
+                              </a>
+                              {inq.email && (
+                                <button
+                                  onClick={() => { navigator.clipboard.writeText(inq.email); addToast('info', 'Email copied!'); }}
+                                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white border border-[#222] hover:border-[#444] px-3 py-2 rounded-sm transition-colors">
+                                  <Copy size={12} /> Copy Email
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ──────── DATA & BACKUP ──────── */}
+                {activeTab === 'data' && (
+                  <div className="space-y-10">
+                    <SectionHeader
+                      icon={<Database size={20} />}
+                      title="Data & Backup"
+                      subtitle="Export or import all website data. Keep regular backups to protect your content."
+                    />
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Export */}
+                      <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-5">
+                        <div className="w-12 h-12 bg-green-500/10 border border-green-500/20 rounded-sm flex items-center justify-center">
+                          <Download size={22} className="text-green-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-white">Create Backup</h4>
+                          <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+                            Exports all projects, services, FAQs, testimonials, site settings, and inquiries into a JSON file.
                           </p>
-                          <p className="text-[10px] text-zinc-500 leading-relaxed italic">
-                            {lang === 'de' 
-                              ? 'Kopieren Sie diesen Code und führen Sie ihn im Supabase SQL Editor aus:'
-                              : 'Copy this code and run it in your Supabase SQL Editor:'}
+                        </div>
+                        <button onClick={handleExport} disabled={isSaving} className="button-primary w-full justify-center disabled:opacity-50">
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                          Download Backup
+                        </button>
+                      </div>
+
+                      {/* Import */}
+                      <div className="p-6 bg-[#0d0d0d] border border-red-500/20 rounded-sm space-y-5">
+                        <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-sm flex items-center justify-center">
+                          <Upload size={22} className="text-red-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-white">Restore Backup</h4>
+                          <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+                            Upload a backup JSON file to restore your data. <strong className="text-red-400">This overwrites current data.</strong>
                           </p>
-                          <pre className="text-[9px] bg-surface-dark p-4 overflow-x-auto text-text-muted font-mono border border-surface-border leading-tight select-all">
-{`-- 1. Ensure all required columns exist in site_settings
+                        </div>
+                        <label className="cursor-pointer">
+                          <div className="flex items-center justify-center gap-2 w-full bg-[#111] border border-[#333] text-zinc-400 hover:text-white hover:border-red-500/50 font-black py-4 px-8 uppercase tracking-widest text-sm transition-all rounded-sm">
+                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            Select Backup File
+                          </div>
+                          <input type="file" accept=".json" onChange={handleImport} disabled={isSaving} className="hidden" />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* SQL Setup */}
+                    <div className="border border-primary/20 bg-primary/5 rounded-sm p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Database size={18} className="text-primary" />
+                        <h4 className="font-black text-sm uppercase tracking-widest text-primary">Database Migration SQL</h4>
+                      </div>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        Run this complete SQL in your <strong className="text-white">Supabase SQL Editor</strong> to create all required tables and columns for the enhanced CMS:
+                      </p>
+                      <SqlSetupBox />
+                    </div>
+
+                    {/* Guidelines */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm">
+                      <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4">Backup Guidelines</h5>
+                      <ul className="text-xs text-zinc-500 space-y-2 list-disc pl-4 leading-relaxed">
+                        <li>Backups include settings, projects, services, FAQs, testimonials, and inquiries.</li>
+                        <li>Image files are not backed up — only their URLs are stored.</li>
+                        <li>Always create a backup before restoring from a file.</li>
+                        <li>Restore will delete all existing records before importing.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+      </motion.div>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+    </>
+  );
+}
+
+// ─── Save Button ──────────────────────────────────────────────────────────────
+function SaveButton({ isSaving, isUploading }: { isSaving: boolean; isUploading: boolean }) {
+  return (
+    <div className="sticky bottom-0 pt-6 pb-2 bg-gradient-to-t from-black/80 to-transparent">
+      <button
+        type="submit"
+        disabled={isSaving || isUploading}
+        className="button-primary w-full justify-center gap-3 py-5 text-base disabled:opacity-50 shadow-[0_0_40px_rgba(255,117,31,0.3)]"
+      >
+        {isSaving ? (
+          <><Loader2 size={20} className="animate-spin" /> Saving...</>
+        ) : (
+          <><Save size={20} /> Save Changes</>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="py-16 text-center border-2 border-dashed border-[#1a1a1a] rounded-sm">
+      <div className="text-4xl mb-4">📭</div>
+      <p className="text-xs font-black uppercase tracking-widest text-zinc-600">{label}</p>
+    </div>
+  );
+}
+
+// ─── SQL Setup Box ────────────────────────────────────────────────────────────
+function SqlSetupBox() {
+  const [copied, setCopied] = useState(false);
+  const sql = `-- ═══════════════════════════════════════════════════════════
+-- FJ BAUSERVICE - Complete CMS Database Setup
+-- Run this in your Supabase SQL Editor
+-- ═══════════════════════════════════════════════════════════
+
+-- 1. SITE SETTINGS - Add all new columns
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS description_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS description_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_heading_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_heading_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_subtext_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_subtext_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_button_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_button_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stat_label_1_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stat_label_2_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_title_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_title_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_subtitle_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_subtitle_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_button_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cta_button_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS footer_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_years text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS stats_projects text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS facebook_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS instagram_url text;
-ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS linkedin_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS tiktok_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS address_en text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS google_maps_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_title_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_title_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_description_de text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_description_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_keywords text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS og_image_url text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_weekdays text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_saturday text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_sunday text;
 
--- 2. Create inquiries table
+-- 2. SERVICES TABLE
+CREATE TABLE IF NOT EXISTS services (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text,
+  title_de text,
+  title_en text,
+  description text,
+  description_de text,
+  description_en text,
+  icon_name text DEFAULT 'Hammer',
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public all" ON services;
+CREATE POLICY "Allow public all" ON services FOR ALL USING (true);
+
+-- 3. FAQS TABLE
+CREATE TABLE IF NOT EXISTS faqs (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  question text,
+  question_de text,
+  question_en text,
+  answer text,
+  answer_de text,
+  answer_en text,
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public all" ON faqs;
+CREATE POLICY "Allow public all" ON faqs FOR ALL USING (true);
+
+-- 4. TESTIMONIALS TABLE
+CREATE TABLE IF NOT EXISTS testimonials (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  author text,
+  company text,
+  text text,
+  text_de text,
+  text_en text,
+  rating integer DEFAULT 5,
+  avatar_url text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public all" ON testimonials;
+CREATE POLICY "Allow public all" ON testimonials FOR ALL USING (true);
+
+-- 5. CONTACT INQUIRIES
 CREATE TABLE IF NOT EXISTS contact_inquiries (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at timestamptz DEFAULT now(),
-  name text,
-  email text,
-  subject text,
-  message text
+  name text, email text, subject text, message text,
+  created_at timestamptz DEFAULT now()
 );
-
--- 3. Fix constraints
-ALTER TABLE site_settings ALTER COLUMN slogan DROP NOT NULL;
-ALTER TABLE site_settings ALTER COLUMN name DROP NOT NULL;
-
--- 4. Enable RLS
 ALTER TABLE contact_inquiries ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public insert" ON contact_inquiries;
 CREATE POLICY "Allow public insert" ON contact_inquiries FOR INSERT WITH CHECK (true);
-DROP POLICY IF EXISTS "Allow admin select" ON contact_inquiries;
-CREATE POLICY "Allow admin select" ON contact_inquiries FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Allow admin delete" ON contact_inquiries;
-CREATE POLICY "Allow admin delete" ON contact_inquiries FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Allow admin all" ON contact_inquiries;
+CREATE POLICY "Allow admin all" ON contact_inquiries FOR ALL USING (true);
 
--- 5. Ensure initial record
-INSERT INTO site_settings (id, name) 
-VALUES (1, 'FJ Bauservice') 
+-- 6. SITE SETTINGS POLICIES
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public all" ON site_settings;
+CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);
+
+-- 7. INITIAL DATA
+INSERT INTO site_settings (id, name, slogan) VALUES (1, 'FJ BAUSERVICE', 'Raum für Neues schaffen')
 ON CONFLICT (id) DO NOTHING;
 
--- 6. Enable site_settings RLS
-ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public read" ON site_settings;
-CREATE POLICY "Allow public read" ON site_settings FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Allow public all" ON site_settings;
-CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);`}
-                          </pre>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </form>
-            </div>
-          )}
+-- 8. STORAGE BUCKET POLICIES (run if needed)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('images', 'images', true) ON CONFLICT DO NOTHING;
+-- CREATE POLICY "Public upload" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'images');
+-- CREATE POLICY "Public view" ON storage.objects FOR SELECT TO public USING (bucket_id = 'images');
+-- CREATE POLICY "Public update" ON storage.objects FOR UPDATE TO public USING (bucket_id = 'images');
+-- CREATE POLICY "Public delete" ON storage.objects FOR DELETE TO public USING (bucket_id = 'images');
 
-          {activeTab === 'projects' && (
-            <div className="space-y-12">
-              <div className="space-y-2">
-                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Projekt-Verwaltung' : 'Project Management'}</h3>
-                <p className="text-text-muted text-sm">{lang === 'de' ? 'Neue Projekte hinzufügen oder bestehende bearbeiten.' : 'Add new projects or edit existing ones.'}</p>
-              </div>
+-- IMPORTANT: After running, go to Supabase → Settings → API → click "Reload Schema"`;
 
-              {/* Project Form */}
-              <div className="bg-surface-dark border border-surface-border p-8 rounded-sm">
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-6 text-primary">
-                  {editingProject ? (lang === 'de' ? 'Projekt bearbeiten' : 'Edit Project') : (lang === 'de' ? 'Neues Projekt' : 'New Project')}
-                </h4>
-                <form onSubmit={handleSaveProject} className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">{lang === 'de' ? 'Titel (DE)' : 'Title (DE)'}</label>
-                    <input 
-                      placeholder="Titel (DE)" type="text" required
-                      value={projectForm.title_de || projectForm.title || ''} onChange={e => setProjectForm({...projectForm, title_de: e.target.value, title: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">Title (EN)</label>
-                    <input 
-                      placeholder="Title (EN)" type="text" required
-                      value={projectForm.title_en || ''} onChange={e => setProjectForm({...projectForm, title_en: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">{lang === 'de' ? 'Kategorie (DE)' : 'Category (DE)'}</label>
-                    <input 
-                      placeholder="Kategorie (DE)" type="text" required
-                      value={projectForm.category_de || projectForm.category || ''} onChange={e => setProjectForm({...projectForm, category_de: e.target.value, category: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">Category (EN)</label>
-                    <input 
-                      placeholder="Category (EN)" type="text" required
-                      value={projectForm.category_en || ''} onChange={e => setProjectForm({...projectForm, category_en: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm"
-                    />
-                  </div>
+  const handleCopy = () => {
+    navigator.clipboard.writeText(sql);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-                  <div className="md:col-span-2 space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">{lang === 'de' ? 'Beschreibung (DE)' : 'Description (DE)'}</label>
-                    <textarea 
-                      placeholder="Beschreibung (DE)" rows={2}
-                      value={projectForm.description_de || projectForm.description || ''} onChange={e => setProjectForm({...projectForm, description_de: e.target.value, description: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm resize-none"
-                    />
-                  </div>
-                  <div className="md:col-span-2 space-y-1">
-                    <label className="text-[9px] uppercase tracking-tighter text-zinc-500">Description (EN)</label>
-                    <textarea 
-                      placeholder="Description (EN)" rows={2}
-                      value={projectForm.description_en || ''} onChange={e => setProjectForm({...projectForm, description_en: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm resize-none"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[9px] uppercase tracking-tighter text-zinc-500">{lang === 'de' ? 'Projekt-Bild' : 'Project Image'}</label>
-                      <label className="cursor-pointer text-[10px] text-primary hover:underline font-bold flex items-center gap-1">
-                        {isUploading === 'image_url' ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />} 
-                        {isUploading === 'image_url' ? (lang === 'de' ? 'Hochladen...' : 'Uploading...') : (lang === 'de' ? 'Hochladen' : 'Upload')}
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload('image_url', e, true)} disabled={!!isUploading} />
-                      </label>
-                    </div>
-                    <input 
-                      placeholder="https://..." type="text" required
-                      value={projectForm.image_url || ''} onChange={e => setProjectForm({...projectForm, image_url: e.target.value})}
-                      className="w-full bg-surface-card border border-surface-border p-3 outline-none focus:border-primary transition-colors text-sm"
-                    />
-                    {renderImageHistory('image_url', true)}
-                  </div>
-
-                  <div className="md:col-span-2 flex gap-4 mt-2">
-                    <button type="submit" disabled={isSaving || !!isUploading} className="button-primary flex-1 justify-center disabled:opacity-50">
-                      {isSaving ? <Loader2 className="animate-spin" /> : (editingProject ? <Save size={20} /> : <Plus size={20} />)}
-                      {editingProject ? (lang === 'de' ? 'Speichern' : 'Save Changes') : (lang === 'de' ? 'Hinzufügen' : 'Add Project')}
-                    </button>
-                    {editingProject && (
-                      <button type="button" onClick={cancelEdit} className="px-6 border border-surface-border text-zinc-500 hover:text-text-main transition-colors uppercase text-xs font-black tracking-widest">
-                        {lang === 'de' ? 'Abbrechen' : 'Cancel'}
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-
-              {/* Project List */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                {projects.map(project => (
-                  <div key={project.id} className="bg-surface-dark border border-surface-border p-4 flex items-center gap-4 group">
-                    <div className="w-16 h-16 bg-surface-card rounded-sm overflow-hidden shrink-0">
-                      <img src={project.image_url} alt="" className="w-full h-full object-cover opacity-60" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-bold truncate text-sm">
-                        {lang === 'de' ? (project.title_de || project.title) : (project.title_en || project.title)}
-                      </h5>
-                      <p className="text-[10px] text-zinc-500 uppercase font-black">
-                        {lang === 'de' ? (project.category_de || project.category) : (project.category_en || project.category)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 md:gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
-                      <button onClick={() => startEditProject(project)} className="p-3 md:p-2 text-text-muted hover:text-primary active:text-primary transition-colors" title={lang === 'de' ? 'Bearbeiten' : 'Edit'} aria-label={lang === 'de' ? 'Bearbeiten' : 'Edit'}><Pencil size={18} /></button>
-                      <button onClick={() => handleDeleteProject(project)} className="p-3 md:p-2 text-text-muted hover:text-red-500 active:text-red-500 transition-colors" title={lang === 'de' ? 'Löschen' : 'Delete'} aria-label={lang === 'de' ? 'Löschen' : 'Delete'}><Trash2 size={18} /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'inquiries' && (
-            <div className="space-y-12">
-              <div className="space-y-2">
-                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Kontakt-Anfragen' : 'Contact Inquiries'}</h3>
-                <p className="text-text-muted text-sm">{lang === 'de' ? 'Erhaltene Nachrichten über das Kontaktformular.' : 'Messages received through the contact form.'}</p>
-              </div>
-
-              {loadingInquiries ? (
-                <div className="flex justify-center p-12">
-                  <Loader2 className="animate-spin text-primary" size={40} />
-                </div>
-              ) : inquiries.length === 0 ? (
-                <div className="p-12 text-center border border-dashed border-surface-border">
-                  <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">{lang === 'de' ? 'Keine Anfragen gefunden' : 'No inquiries found'}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {inquiries.map((inquiry) => (
-                    <div key={inquiry.id} className="bg-surface-dark border border-surface-border p-6 space-y-4 relative group">
-                      <button 
-                        onClick={() => handleDeleteInquiry(inquiry.id)}
-                        className="absolute top-6 right-6 text-zinc-600 hover:text-red-500 transition-colors p-2"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                      
-                      <div className="flex flex-col md:flex-row gap-4 md:items-center text-[10px] font-black uppercase tracking-widest">
-                        <span className="text-primary">{inquiry.name}</span>
-                        <span className="text-zinc-500 hidden md:block">•</span>
-                        <span className="text-zinc-400">{inquiry.email}</span>
-                        <span className="text-zinc-500 hidden md:block">•</span>
-                        <span className="text-zinc-600">
-                          {new Date(inquiry.created_at).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="font-bold text-text-main">{inquiry.subject}</h4>
-                        <p className="text-zinc-500 text-sm leading-relaxed">{inquiry.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'data' && (
-            <div className="space-y-12">
-              <div className="space-y-2">
-                <h3 className="heading-dynamic text-4xl">{lang === 'de' ? 'Daten-Verwaltung' : 'Data Management'}</h3>
-                <p className="text-text-muted text-sm">{lang === 'de' ? 'Sichern Sie Ihre Webseitendaten oder stellen Sie diese aus einer Datei wieder her.' : 'Backup your website data or restore it from a file.'}</p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-surface-dark border border-surface-border p-8 space-y-6 flex flex-col">
-                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-sm mb-2">
-                    <Save className="text-primary mb-3" size={32} />
-                    <h4 className="font-bold text-lg mb-1">{lang === 'de' ? 'Backup erstellen' : 'Create Backup'}</h4>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      {lang === 'de' 
-                        ? 'Exportiert alle Projekte, Webseiten-Infos und Kontakt-Anfragen in eine JSON-Datei.' 
-                        : 'Exports all projects, site information, and contact inquiries into a JSON file.'}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={handleExportData}
-                    disabled={isSaving}
-                    className="button-primary w-full justify-center gap-2 mt-auto"
-                  >
-                    {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-                    {lang === 'de' ? 'Backup jetzt herunterladen' : 'Download Backup Now'}
-                  </button>
-                </div>
-
-                <div className="bg-surface-dark border border-surface-border p-8 space-y-6 flex flex-col">
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-sm mb-2">
-                    <Trash2 className="text-red-500 mb-3" size={32} />
-                    <h4 className="font-bold text-lg mb-1">{lang === 'de' ? 'Daten wiederherstellen' : 'Restore Data'}</h4>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      {lang === 'de' 
-                        ? 'Laden Sie eine Backup-Datei hoch, um Ihre aktuellen Daten zu überschreiben. Dieser Vorgang ist endgültig.' 
-                        : 'Upload a backup file to overwrite your current data. This process is final.'}
-                    </p>
-                  </div>
-                  <div className="mt-auto">
-                    <label className="cursor-pointer">
-                      <div className="button-primary w-full justify-center gap-2 bg-surface-card border-surface-border hover:bg-surface-dark text-text-main">
-                        {isRestoring ? <Loader2 className="animate-spin" /> : <Mail size={20} />}
-                        {lang === 'de' ? 'Backup-Datei auswählen' : 'Select Backup File'}
-                      </div>
-                      <input 
-                        type="file" 
-                        accept=".json" 
-                        onChange={handleImportData} 
-                        disabled={isRestoring} 
-                        className="hidden" 
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 bg-surface-dark border border-surface-border rounded-sm">
-                <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-4">{lang === 'de' ? 'Hin Weise zur Datensicherung' : 'Backup Guidelines'}</h5>
-                <ul className="text-[11px] text-zinc-500 space-y-2 list-disc pl-4 leading-relaxed">
-                  <li>{lang === 'de' ? 'Backups enthalten keine Bilder selbst, sondern nur die URLs zu den Bildern.' : 'Backups do not contain the actual images, but only the URLs to the images.'}</li>
-                  <li>{lang === 'de' ? 'Die Wiederherstellung löscht alle bestehenden Projekte und Anfragen vor dem Import.' : 'Restore will delete all existing projects and inquiries before importing.'}</li>
-                  <li>{lang === 'de' ? 'Empfohlen: Erstellen Sie IMMER ein Backup vor einer Wiederherstellung.' : 'Recommended: ALWAYS create a backup before performing a restore.'}</li>
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
+  return (
+    <div className="relative">
+      <button
+        onClick={handleCopy}
+        className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary border border-[#333] hover:border-primary px-3 py-1.5 rounded-sm transition-colors bg-[#0a0a0a]"
+      >
+        {copied ? <><Check size={12} className="text-green-400" /> Copied!</> : <><Copy size={12} /> Copy SQL</>}
+      </button>
+      <pre className="text-[9px] bg-[#050505] border border-[#1a1a1a] p-4 pt-10 overflow-x-auto text-zinc-500 font-mono leading-relaxed rounded-sm select-all max-h-64 overflow-y-auto scrollbar-thin">
+        {sql}
+      </pre>
+    </div>
   );
 }

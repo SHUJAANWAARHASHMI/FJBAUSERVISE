@@ -3,11 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Navbar from './components/Navbar';
@@ -23,10 +18,9 @@ import Login from './components/Login';
 import SEO from './components/SEO';
 import FAQ from './components/FAQ';
 import { supabase } from './lib/supabase';
-
 import { translations } from './lib/translations';
 
-interface SiteSettings {
+export interface SiteSettings {
   name: string;
   slogan: string;
   slogan_en?: string;
@@ -34,18 +28,58 @@ interface SiteSettings {
   description: string;
   description_en?: string;
   description_de?: string;
+  // Hero
+  hero_heading_de?: string;
+  hero_heading_en?: string;
+  hero_subtext_de?: string;
+  hero_subtext_en?: string;
+  hero_button_de?: string;
+  hero_button_en?: string;
+  // Stats
+  stats_years?: string;
+  stats_projects?: string;
+  stat_label_1_de?: string;
+  stat_label_2_de?: string;
+  // Contact
   phone: string;
   email: string;
   address: string;
+  address_de?: string;
+  address_en?: string;
+  whatsapp_number?: string;
+  google_maps_url?: string;
+  hours_weekdays?: string;
+  hours_saturday?: string;
+  hours_sunday?: string;
+  // Images
+  logo_url?: string;
   hero_image_url?: string;
   about_image_url?: string;
   cta_image_url?: string;
   contact_image_url?: string;
-  stats_years?: string;
-  stats_projects?: string;
+  footer_image_url?: string;
+  og_image_url?: string;
+  // CTA
+  cta_title_de?: string;
+  cta_title_en?: string;
+  cta_subtitle_de?: string;
+  cta_subtitle_en?: string;
+  cta_button_de?: string;
+  cta_button_en?: string;
+  // Social
+  facebook_url?: string;
+  instagram_url?: string;
+  linkedin_url?: string;
+  tiktok_url?: string;
+  // SEO
+  seo_title_de?: string;
+  seo_title_en?: string;
+  seo_description_de?: string;
+  seo_description_en?: string;
+  seo_keywords?: string;
 }
 
-interface Project {
+export interface Project {
   id: string;
   title: string;
   title_en?: string;
@@ -59,11 +93,48 @@ interface Project {
   description_de?: string;
 }
 
+export interface Service {
+  id: string;
+  title: string;
+  title_de?: string;
+  title_en?: string;
+  description: string;
+  description_de?: string;
+  description_en?: string;
+  icon_name?: string;
+  sort_order?: number;
+}
+
+export interface Faq {
+  id: string;
+  question: string;
+  question_de?: string;
+  question_en?: string;
+  answer: string;
+  answer_de?: string;
+  answer_en?: string;
+  sort_order?: number;
+}
+
+export interface Testimonial {
+  id: string;
+  author: string;
+  company?: string;
+  text: string;
+  text_de?: string;
+  text_en?: string;
+  rating?: number;
+  avatar_url?: string;
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const language = 'de';
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -71,77 +142,71 @@ export default function App() {
 
   const t = translations[language];
 
-  // Handle Authentication
+  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // Force language to German
+  // Force German
   useEffect(() => {
     document.documentElement.lang = 'de';
     document.documentElement.dir = 'ltr';
   }, []);
 
+  // ── Data Fetch ────────────────────────────────────────────────────────────
   const fetchData = async () => {
     try {
-      const [settingsRes, projectsRes] = await Promise.all([
+      const [settingsRes, projectsRes, servicesRes, faqsRes, testimonialsRes] = await Promise.all([
         supabase.from('site_settings').select('*').limit(1),
-        supabase.from('projects').select('*').order('created_at', { ascending: false })
+        supabase.from('projects').select('*').order('created_at', { ascending: false }),
+        supabase.from('services').select('*').order('sort_order', { ascending: true }),
+        supabase.from('faqs').select('*').order('sort_order', { ascending: true }),
+        supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       ]);
 
-      if (settingsRes.data && settingsRes.data.length > 0) {
-        setSiteSettings(settingsRes.data[0]);
-      }
+      if (settingsRes.data && settingsRes.data.length > 0) setSiteSettings(settingsRes.data[0]);
       if (projectsRes.data) setProjects(projectsRes.data);
+      // Services: use DB if available, else fall back to translations
+      if (servicesRes.data && servicesRes.data.length > 0) setServices(servicesRes.data);
+      else setServices([]);
+      if (faqsRes.data && faqsRes.data.length > 0) setFaqs(faqsRes.data);
+      else setFaqs([]);
+      if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
     } catch (error) {
-      console.error('Error fetching data from Supabase:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Sync theme with document class
-  useEffect(() => {
-    if (!isDarkMode) {
-      document.documentElement.classList.add('theme-light');
-    } else {
-      document.documentElement.classList.remove('theme-light');
-    }
-  }, [isDarkMode]);
-
-  // Smooth scroll to top on page change
+  // ── Scroll to top on page change ──────────────────────────────────────────
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
+  // ── SEO metadata from settings ────────────────────────────────────────────
+  const seoTitle = siteSettings?.seo_title_de || "Abbruch, Entkernung & Kernbohrung München";
+  const seoDesc  = siteSettings?.seo_description_de || "Ihr Partner für fachgerechten Abbruch, präzise Kernbohrungen und professionelle Entkernung in München und Rosenheim.";
+
+  // ── Page Renderer ─────────────────────────────────────────────────────────
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
         return (
           <>
-            <SEO 
-              title="Abbruch, Entkernung & Kernbohrung München" 
-              description="Ihr Partner für fachgerechten Abbruch, präzise Kernbohrungen und professionelle Entkernung in München und Rosenheim. Jetzt kostenloses Angebot anfordern!" 
-              faq={t.faq.items}
-            />
+            <SEO title={seoTitle} description={seoDesc} faq={t.faq.items} />
             <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
-            <Services lang={language} setCurrentPage={setCurrentPage} />
+            <Services lang={language} setCurrentPage={setCurrentPage} dbServices={services} />
             <WhyUs lang={language} />
-            <motion.section 
+            <motion.section
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -156,7 +221,7 @@ export default function App() {
               </div>
               <ProjectGallery projects={projects.slice(0, 6)} lang={language} />
             </motion.section>
-            <FAQ lang={language} />
+            <FAQ lang={language} dbFaqs={faqs} />
             <CTA settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />
             <Contact settings={siteSettings} lang={language} />
           </>
@@ -164,34 +229,32 @@ export default function App() {
       case 'about':
         return (
           <>
-            <SEO 
-              title="Über Uns | FJ BAUSERVICE Rosenheim" 
-              description="Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb für Rückbau und Sanierungsvorbereitung. Qualität und Termintreue seit Jahren." 
+            <SEO
+              title="Über Uns | FJ BAUSERVICE Rosenheim"
+              description="Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb für Rückbau und Sanierungsvorbereitung."
             />
             <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
               <div className="space-y-8 max-w-4xl">
-                 <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Unsere Geschichte</span>
-                 <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span></h1>
+                <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Unsere Geschichte</span>
+                <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">
+                  Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span>
+                </h1>
               </div>
-
               <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
                 <div className="space-y-10 text-text-muted text-lg md:text-xl font-medium leading-relaxed">
                   <p className="text-text-main text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
-                    "Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."
+                    "Wir schaffen seit über {siteSettings?.stats_years || '15'} Jahren Raum für Neues in Bayern."
                   </p>
                   <p>
-                    {siteSettings?.name || 'FJ Bauservice'} ist Ihr inhabergeführtes **Abbruchunternehmen in München & Rosenheim**. Wir sind spezialisiert auf komplexe Rückbau-Herausforderungen, präzise Kernbohrungen in Beton und fachgerechte Gebäudeentkernung in ganz Oberbayern.
-                  </p>
-                  <p>
-                    Unser Anspruch als führende Baufirma für Abbrucharbeiten ist absolute Termintreue und eine saubere, sichere Baustelle. Wir verstehen uns als Partner von Architekten, Bauherren und Kommunen in München, die Wert auf höchste Qualität und professionelle Abwicklung beim Rückbau und der Sanierung legen.
+                    {siteSettings?.description_de || siteSettings?.description || `${siteSettings?.name || 'FJ Bauservice'} ist Ihr inhabergeführtes Abbruchunternehmen in München & Rosenheim.`}
                   </p>
                   <div className="pt-8 flex flex-wrap gap-12 border-t border-surface-border">
                     <div>
-                      <span className="block text-4xl font-black text-primary italic leading-none">15+</span>
+                      <span className="block text-4xl font-black text-primary italic leading-none">{siteSettings?.stats_years || '15+'}</span>
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Jahre Erfahrung</span>
                     </div>
                     <div>
-                      <span className="block text-4xl font-black text-primary italic leading-none">500+</span>
+                      <span className="block text-4xl font-black text-primary italic leading-none">{siteSettings?.stats_projects || '500+'}</span>
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Projekte</span>
                     </div>
                     <div>
@@ -202,23 +265,20 @@ export default function App() {
                 </div>
                 <div className="relative group">
                   <div className="aspect-[3/4] bg-surface-card border border-surface-border overflow-hidden shadow-2xl relative z-10">
-                    <img 
-                      src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"} 
-                      alt="FJ BAUSERVICE Fachbetrieb am Bau - Abbruch München und Rosenheim" 
+                    <img
+                      src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"}
+                      alt="FJ BAUSERVICE Fachbetrieb"
                       className="w-full h-full object-cover opacity-60 filter grayscale brightness-75 group-hover:scale-110 transition-transform duration-1000"
-                      referrerPolicy="no-referrer"
                       loading="lazy"
                     />
                   </div>
-                  <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-20 -z-10 group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-primary/20 -z-10 animate-pulse" />
+                  <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-20 -z-10" />
                 </div>
               </div>
-
               <div className="pt-12 text-center md:text-left">
-                  <button onClick={() => setCurrentPage('contact')} className="button-primary px-16 py-8 transition-all hover:shadow-[10px_10px_0px_0px_white] active:translate-y-2">
-                    Unverbindliches Angebot einholen
-                  </button>
+                <button onClick={() => setCurrentPage('contact')} className="button-primary px-16 py-8">
+                  Unverbindliches Angebot einholen
+                </button>
               </div>
             </section>
           </>
@@ -226,26 +286,25 @@ export default function App() {
       case 'services':
         return (
           <div className="pt-20">
-            <SEO 
-              title="Unsere Leistungen | Abbruch, Entkernung, Kernbohrung" 
-              description="Alle Leistungen von FJ BAUSERVICE im Überblick: Professioneller Abbruch, Entkernung, Sanierung und Kernbohrung in München und Rosenheim." 
+            <SEO
+              title="Unsere Leistungen | Abbruch, Entkernung, Kernbohrung"
+              description="Alle Leistungen von FJ BAUSERVICE im Überblick."
             />
-            <Services lang={language} setCurrentPage={setCurrentPage} />
+            <Services lang={language} setCurrentPage={setCurrentPage} dbServices={services} />
           </div>
         );
       case 'projects':
         return (
           <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
-            <SEO 
-              title="Referenzen | Unsere Projekte in München & Rosenheim" 
-              description="Sehen Sie unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte. Qualität und Professionalität in jedem Schritt." 
+            <SEO
+              title="Referenzen | Unsere Projekte in München & Rosenheim"
+              description="Sehen Sie unsere erfolgreich abgeschlossenen Projekte."
             />
             <div className="space-y-8 max-w-4xl">
               <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Projektarchiv</span>
-              <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">Unsere<br /><span className="text-primary not-italic font-black">Werke.</span></h1>
-              <p className="text-text-muted max-w-2xl text-base md:text-lg font-medium leading-relaxed">
-                Ein Einblick in unsere erfolgreich abgeschlossenen Abbruch- und Rückbauprojekte für gewerbliche und private Kunden in ganz Bayern.
-              </p>
+              <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">
+                Unsere<br /><span className="text-primary not-italic font-black">Werke.</span>
+              </h1>
             </div>
             <ProjectGallery projects={projects} lang={language} />
           </section>
@@ -253,9 +312,9 @@ export default function App() {
       case 'contact':
         return (
           <>
-            <SEO 
-              title="Kontakt | Jetzt Angebot für Abbruch anfordern" 
-              description="Kontaktieren Sie FJ BAUSERVICE für Ihre Abbruch- oder Sanierungsarbeiten. Wir beraten Sie kostenlos vor Ort in München und Rosenheim." 
+            <SEO
+              title="Kontakt | Jetzt Angebot anfordern"
+              description="Kontaktieren Sie FJ BAUSERVICE für Ihre Abbruch- oder Sanierungsarbeiten."
             />
             <Contact settings={siteSettings} lang={language} />
           </>
@@ -263,28 +322,21 @@ export default function App() {
       case 'legal':
         return (
           <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto space-y-12">
-            <SEO 
-              title="Impressum & Datenschutz | FJ BAUSERVICE" 
-              description="Rechtliche Informationen und Datenschutzbestimmungen von FJ BAUSERVICE." 
-            />
+            <SEO title="Impressum & Datenschutz | FJ BAUSERVICE" description="Rechtliche Informationen." />
             <h1 className="heading-dynamic text-6xl">Rechtliches</h1>
-            <div className={`prose ${isDarkMode ? 'prose-invert' : ''} max-w-none space-y-8 text-text-muted`}>
+            <div className="prose max-w-none space-y-8 text-text-muted">
               <div>
                 <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.impressum}</h2>
                 <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap leading-relaxed">
                   {siteSettings?.name || 'FJ Bauservice'}{'\n'}
-                  {(language === 'de' ? siteSettings?.address_de : siteSettings?.address_en) || siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
-                  {language === 'de' ? 'Vertreten durch' : 'Represented by'}: Amjad Ali{'\n'}
-                  {language === 'de' ? 'Kontakt' : 'Contact'}: {siteSettings?.email || 'amjad.ali@fj-bauservice.com'}
+                  {siteSettings?.address_de || siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
+                  Vertreten durch: Amjad Ali{'\n'}
+                  Kontakt: {siteSettings?.email || 'amjad.ali@fj-bauservice.com'}
                 </div>
               </div>
               <div>
                 <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.privacy}</h2>
-                <p>
-                  {language === 'de' 
-                    ? 'Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO).'
-                    : 'The protection of your personal data is a special concern for us. We process your data exclusively on the basis of the legal provisions (GDPR).'}
-                </p>
+                <p>Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO).</p>
               </div>
             </div>
           </section>
@@ -296,28 +348,25 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className={`min-h-screen ${!isDarkMode ? 'theme-light' : ''} bg-surface-dark flex items-center justify-center`}>
+      <div className="min-h-screen bg-surface-dark flex items-center justify-center">
         <div className="heading-dynamic text-4xl animate-pulse text-text-muted tracking-[0.2em]">LOADING</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-surface-dark transition-colors duration-500`}>
-      <Navbar 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
-        settings={siteSettings} 
+    <div className="min-h-screen bg-surface-dark transition-colors duration-500">
+      <Navbar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        settings={siteSettings}
         onAdminTrigger={() => {
-          if (session) {
-            setIsAdminPanelOpen(true);
-          } else {
-            setIsLoginOpen(true);
-          }
+          if (session) setIsAdminPanelOpen(true);
+          else setIsLoginOpen(true);
         }}
         lang={language}
       />
-      
+
       <main>
         <AnimatePresence mode="wait">
           <motion.div
@@ -332,28 +381,22 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Footer 
-        settings={siteSettings} 
-        lang={language} 
-        setCurrentPage={setCurrentPage} 
+      <Footer
+        settings={siteSettings}
+        lang={language}
+        setCurrentPage={setCurrentPage}
         onAdminTrigger={() => {
-          if (session) {
-            setIsAdminPanelOpen(true);
-          } else {
-            setIsLoginOpen(true);
-          }
+          if (session) setIsAdminPanelOpen(true);
+          else setIsLoginOpen(true);
         }}
       />
 
       <AnimatePresence>
         {isLoginOpen && !session && (
-          <Login 
+          <Login
             onClose={() => setIsLoginOpen(false)}
             onLoginStatus={(status) => {
-              if (status) {
-                setIsLoginOpen(false);
-                setIsAdminPanelOpen(true);
-              }
+              if (status) { setIsLoginOpen(false); setIsAdminPanelOpen(true); }
             }}
             lang={language}
           />
@@ -362,7 +405,7 @@ export default function App() {
 
       <AnimatePresence>
         {isAdminPanelOpen && session && (
-          <AdminPanel 
+          <AdminPanel
             onClose={async () => {
               await supabase.auth.signOut();
               setSession(null);
@@ -370,6 +413,9 @@ export default function App() {
             }}
             settings={siteSettings}
             projects={projects}
+            services={services}
+            faqs={faqs}
+            testimonials={testimonials}
             refreshData={fetchData}
             lang={language}
           />
@@ -378,5 +424,3 @@ export default function App() {
     </div>
   );
 }
-
-
