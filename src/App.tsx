@@ -17,6 +17,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import SEO from './components/SEO';
 import FAQ from './components/FAQ';
+import SiteEditor from './components/SiteEditor';
 import { supabase } from './lib/supabase';
 import { translations } from './lib/translations';
 
@@ -137,6 +138,7 @@ export default function App() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isSiteEditorOpen, setIsSiteEditorOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [session, setSession] = useState<any>(null);
 
@@ -404,7 +406,7 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isAdminPanelOpen && session && (
+        {isAdminPanelOpen && session && !isSiteEditorOpen && (
           <AdminPanel
             onClose={async () => {
               await supabase.auth.signOut();
@@ -418,7 +420,32 @@ export default function App() {
             testimonials={testimonials}
             refreshData={fetchData}
             lang={language}
+            onOpenSiteEditor={() => setIsSiteEditorOpen(true)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isSiteEditorOpen && session && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <SiteEditor
+              onClose={() => {
+                setIsSiteEditorOpen(false);
+                fetchData();
+              }}
+              initialSettings={siteSettings}
+              initialProjects={projects}
+              initialServices={services}
+              initialFaqs={faqs}
+              initialTestimonials={testimonials}
+              refreshData={fetchData}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

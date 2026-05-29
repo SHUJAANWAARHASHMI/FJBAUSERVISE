@@ -7,7 +7,7 @@ import {
   CheckCircle2, AlertCircle, Eye, EyeOff, GripVertical, Upload,
   FileText, Star, Phone, MapPin, Search, BarChart2, Palette,
   RefreshCw, Download, Shield, Users, Home, Award, Copy, Check,
-  ExternalLink, Info, Layers, Zap
+  ExternalLink, Info, Layers, Zap, MousePointer2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -21,6 +21,7 @@ interface AdminPanelProps {
   testimonials: any[];
   refreshData: () => void;
   lang: 'en' | 'de';
+  onOpenSiteEditor?: () => void;
 }
 
 type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'seo' | 'inquiries' | 'media' | 'data';
@@ -219,7 +220,8 @@ function BilingualInput({
 // ═════════════════════════════════════════════════════════════════════════════
 export default function AdminPanel({
   onClose, settings, projects: initialProjects, services: initialServices,
-  faqs: initialFaqs, testimonials: initialTestimonials, refreshData, lang
+  faqs: initialFaqs, testimonials: initialTestimonials, refreshData, lang,
+  onOpenSiteEditor
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -693,6 +695,25 @@ export default function AdminPanel({
                           <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1">{s.label}</div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Site Editor Banner */}
+                    <div
+                      onClick={onOpenSiteEditor}
+                      className="cursor-pointer flex items-center gap-5 p-6 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 rounded-sm hover:border-primary/60 hover:from-primary/30 transition-all group"
+                    >
+                      <div className="w-14 h-14 bg-primary flex items-center justify-center rounded-sm shrink-0 group-hover:scale-110 transition-transform">
+                        <MousePointer2 size={28} className="text-black" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-black text-xl text-white group-hover:text-primary transition-colors">Visual Site Editor</h3>
+                        <p className="text-zinc-400 text-sm mt-1">Live-Vorschau — klicke direkt auf Texte, Bilder und Abschnitte um sie sofort zu bearbeiten. Wie Wix, nur für deine Website.</p>
+                      </div>
+                      <div className="shrink-0">
+                        <div className="bg-primary text-black font-black text-[11px] uppercase tracking-widest px-4 py-2 rounded-sm group-hover:bg-white transition-colors">
+                          Öffnen →
+                        </div>
+                      </div>
                     </div>
 
                     {/* Quick Actions */}
@@ -1668,6 +1689,27 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_weekdays text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_saturday text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_sunday text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_scale text DEFAULT '1';
+
+-- 1b. VISUAL EDITOR columns (Site Editor)
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS primary_color text DEFAULT '#ff751f';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_cta_label text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS services_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS services_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS projects_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS projects_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS faq_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_1_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_1_desc text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_2_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_2_desc text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_3_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_3_desc text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_4_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_4_desc text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS footer_copyright text;
 
 -- 2. SERVICES TABLE
 CREATE TABLE IF NOT EXISTS services (
