@@ -5,10 +5,9 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
   const t = translations[lang];
   const ctaImage = settings?.cta_image_url || 'https://images.unsplash.com/photo-1590644365607-1c5a519a9a37?q=80&w=2070&auto=format&fit=crop';
 
-  // Use dynamic content from settings, fall back to translations
-  const ctaTitle   = lang === 'de' ? (settings?.cta_title_de   || t.cta.title)   : (settings?.cta_title_en   || t.cta.title);
+  const ctaTitle    = lang === 'de' ? (settings?.cta_title_de    || t.cta.title)    : (settings?.cta_title_en    || t.cta.title);
   const ctaSubtitle = lang === 'de' ? (settings?.cta_subtitle_de || t.cta.subtitle) : (settings?.cta_subtitle_en || t.cta.subtitle);
-  const ctaButton   = lang === 'de' ? (settings?.cta_button_de   || t.cta.button)  : (settings?.cta_button_en  || t.cta.button);
+  const ctaButton   = lang === 'de' ? (settings?.cta_button_de   || t.cta.button)   : (settings?.cta_button_en   || t.cta.button);
 
   return (
     <section className="bg-primary py-32 px-6 relative overflow-hidden">
@@ -21,19 +20,20 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
       >
         <img
           src={ctaImage}
-          alt="FJ BAUSERVICE Rückbau München"
-          className="w-full h-full object-cover opacity-10 filter grayscale brightness-50"
+          alt="FJ BAUSERVICE Rückbau"
+          className="w-full h-full object-cover opacity-10 filter grayscale"
           referrerPolicy="no-referrer"
           loading="lazy"
         />
       </motion.div>
 
+      {/* Decorative BG text */}
       <motion.div
         initial={{ opacity: 0, y: 100 }}
-        whileInView={{ opacity: 0.15, y: 0 }}
+        whileInView={{ opacity: 0.12, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: 0.3, duration: 1 }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-1"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-[1]"
       >
         <span className="text-[250px] md:text-[400px] font-black heading-dynamic whitespace-nowrap text-black italic">
           {settings?.name?.split(' ')[0] || 'FJ'}
@@ -63,7 +63,7 @@ export default function CTA({ settings, lang, setCurrentPage }: { settings: any,
           viewport={{ once: true }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           onClick={() => setCurrentPage('contact')}
-          className="bg-surface-dark text-text-main hover:bg-text-main hover:text-surface-dark px-16 py-8 font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[10px_10px_0px_0px_var(--shadow-color)] hover:shadow-none active:translate-x-2 active:translate-y-2"
+          className="bg-white text-black hover:bg-gray-900 hover:text-white px-16 py-8 font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[10px_10px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none active:translate-x-2 active:translate-y-2"
         >
           {ctaButton}
         </motion.button>

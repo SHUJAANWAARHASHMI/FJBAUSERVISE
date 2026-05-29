@@ -14,31 +14,37 @@
   --map-filter: var(--filter-map);
 }
 
+/* ── WHITE THEME (default / only theme) ───────────────────── */
 :root {
-  --bg-color: #000000;
-  --card-color: #111111;
-  --border-color: #222222;
-  --text-color: #ffffff;
-  --shadow-color: #ffffff;
-  --text-muted: #71717a;
-  --dot-color: rgba(255, 255, 255, 0.02);
-  --filter-map: grayscale(1) invert(0.9) contrast(1.2);
+  --bg-color:      #ffffff;
+  --card-color:    #f5f5f5;
+  --border-color:  #e0e0e0;
+  --text-color:    #111111;
+  --shadow-color:  #111111;
+  --text-muted:    #6b7280;
+  --dot-color:     rgba(0, 0, 0, 0.04);
+  --filter-map:    grayscale(0.3) contrast(1.1);
 }
 
+/* Keep .theme-light as an alias so nothing breaks */
 .theme-light {
-  --bg-color: #ffffff;
-  --card-color: #f3f3f3;
-  --border-color: #dddddd;
-  --text-color: #000000;
-  --shadow-color: #000000;
-  --text-muted: #52525b;
-  --dot-color: rgba(0, 0, 0, 0.05);
-  --filter-map: grayscale(1) contrast(1.2);
+  --bg-color:      #ffffff;
+  --card-color:    #f5f5f5;
+  --border-color:  #e0e0e0;
+  --text-color:    #111111;
+  --shadow-color:  #111111;
+  --text-muted:    #6b7280;
+  --dot-color:     rgba(0, 0, 0, 0.04);
+  --filter-map:    grayscale(0.3) contrast(1.1);
 }
 
 @layer base {
+  html {
+    @apply bg-white text-[#111111];
+  }
   body {
-    @apply bg-surface-dark text-text-main font-sans antialiased selection:bg-primary selection:text-text-main;
+    @apply bg-surface-dark text-text-main font-sans antialiased selection:bg-primary selection:text-white;
+    background-color: #ffffff;
     background-image: radial-gradient(circle at 1px 1px, var(--dot-color) 1px, transparent 0);
     background-size: 30px 30px;
   }
@@ -48,10 +54,26 @@
   @apply font-display font-black uppercase tracking-tighter;
 }
 
+/* Orange primary button — keeps orange bg, black text, hover → dark bg white text */
 .button-primary {
-  @apply bg-primary text-black font-extrabold py-4 px-8 flex items-center gap-2 hover:bg-text-main hover:text-surface-dark transition-all duration-300 uppercase tracking-widest text-sm;
+  @apply bg-primary text-black font-extrabold py-4 px-8 flex items-center gap-2
+         hover:bg-[#111111] hover:text-white
+         transition-all duration-300 uppercase tracking-widest text-sm;
 }
 
 .card-service {
-  @apply bg-surface-card border border-surface-border p-10 hover:border-primary transition-all duration-500 relative overflow-hidden;
+  @apply bg-surface-card border border-surface-border p-10 hover:border-primary
+         transition-all duration-500 relative overflow-hidden;
+}
+
+/* Scrollbar thin utility */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

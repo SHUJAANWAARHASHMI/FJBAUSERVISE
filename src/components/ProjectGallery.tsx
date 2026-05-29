@@ -47,14 +47,14 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
   return (
     <div className="space-y-16">
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-4 border-b border-surface-border pb-10">
+      <div className="flex flex-wrap gap-4 border-b border-gray-200 pb-10">
         <button
           id="filter-all"
           onClick={() => setActiveCategory('all')}
           className={`px-8 py-3 text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 border relative overflow-hidden group ${
             activeCategory === 'all'
               ? 'bg-primary text-black border-primary'
-              : 'bg-transparent text-text-muted hover:text-text-main border-surface-border'
+              : 'bg-transparent text-gray-500 hover:text-gray-900 border-gray-200'
           }`}
         >
           <span className="relative z-10">{t.services.all}</span>
@@ -67,7 +67,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
             className={`px-8 py-3 text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 border relative overflow-hidden group ${
               activeCategory === category
                 ? 'bg-primary text-black border-primary'
-                : 'bg-transparent text-text-muted hover:text-text-main border-surface-border'
+                : 'bg-transparent text-gray-500 hover:text-gray-900 border-gray-200'
             }`}
           >
             <span className="relative z-10">{category}</span>
@@ -98,7 +98,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
                   delay: idx * 0.05,
                   ease: [0.16, 1, 0.3, 1] 
                 }}
-                className="aspect-[4/5] bg-surface-card border border-surface-border relative group overflow-hidden shadow-2xl"
+                className="aspect-[4/5] bg-white border border-gray-200 relative group overflow-hidden shadow-2xl"
               >
                 <img
                   src={project.image_url}
@@ -108,7 +108,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
                   loading="lazy"
                 />
                 
-                <div className="absolute inset-0 p-10 flex flex-col justify-end gap-6 bg-gradient-to-t from-surface-dark via-surface-dark/40 to-transparent">
+                <div className="absolute inset-0 p-10 flex flex-col justify-end gap-6 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-[2px] bg-primary" />
                     <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">
@@ -116,16 +116,16 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
                     </span>
                   </div>
                   <div className="space-y-3">
-                    <h3 className="heading-dynamic text-4xl leading-[0.9] italic text-text-main group-hover:text-primary transition-colors duration-500">
+                    <h3 className="heading-dynamic text-4xl leading-[0.9] italic text-white group-hover:text-primary transition-colors duration-500">
                       {project.title_de || project.title}
                     </h3>
-                    <p className="text-text-muted text-sm font-medium line-clamp-3 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-4 group-hover:translate-y-0">
+                    <p className="text-gray-300 text-sm font-medium line-clamp-3 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-4 group-hover:translate-y-0">
                       {project.description_de || project.description}
                     </p>
                   </div>
                 </div>
                 
-                <div className="absolute top-8 right-8 w-12 h-12 border border-surface-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                <div className="absolute top-8 right-8 w-12 h-12 border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
                 </div>
               </motion.div>
@@ -134,7 +134,7 @@ export default function ProjectGallery({ projects, lang }: ProjectGalleryProps) 
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-text-muted font-black italic col-span-full py-32 text-center uppercase tracking-[0.4em] text-xs"
+              className="text-gray-500 font-black italic col-span-full py-32 text-center uppercase tracking-[0.4em] text-xs"
             >
               Keine Referenzen in dieser Kategorie gefunden.
             </motion.p>

@@ -348,14 +348,14 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-dark flex items-center justify-center">
-        <div className="heading-dynamic text-4xl animate-pulse text-text-muted tracking-[0.2em]">LOADING</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="heading-dynamic text-4xl animate-pulse text-gray-300 tracking-[0.2em]">LOADING</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-dark transition-colors duration-500">
+    <div className="min-h-screen bg-white transition-colors duration-500">
       <Navbar
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
