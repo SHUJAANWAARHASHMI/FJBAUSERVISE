@@ -19,6 +19,7 @@ import SEO from './components/SEO';
 import FAQ from './components/FAQ';
 import SiteEditor from './components/SiteEditor';
 import { supabase } from './lib/supabase';
+import { fetchLatestSettings } from './lib/cmsUtils';
 import { translations } from './lib/translations';
 
 export interface SiteSettings {
@@ -162,19 +163,23 @@ export default function App() {
   }, []);
 
   // ── Data Fetch ────────────────────────────────────────────────────────────
+  // fetchLatestSettings() from cmsUtils always bypasses any local state cache
+  // (uses a direct Supabase call with no client-side caching layer).
   const fetchData = async () => {
     try {
-      const [settingsRes, projectsRes, servicesRes, faqsRes, testimonialsRes] = await Promise.all([
-        supabase.from('site_settings').select('*').limit(1),
+      const [latestSettings, projectsRes, servicesRes, faqsRes, testimonialsRes] = await Promise.all([
+        fetchLatestSettings(),  // ← cache-free, guaranteed fresh row from DB
         supabase.from('projects').select('*').order('created_at', { ascending: false }),
         supabase.from('services').select('*').order('sort_order', { ascending: true }),
         supabase.from('faqs').select('*').order('sort_order', { ascending: true }),
         supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       ]);
 
-      if (settingsRes.data && settingsRes.data.length > 0) setSiteSettings(settingsRes.data[0]);
+      // Settings: use cmsUtils result (null means DB error → keep previous value)
+      if (latestSettings) setSiteSettings(latestSettings);
+
       if (projectsRes.data) setProjects(projectsRes.data);
-      // Services: use DB if available, else fall back to translations
+      // Services: use DB if available, else fall back to empty array
       if (servicesRes.data && servicesRes.data.length > 0) setServices(servicesRes.data);
       else setServices([]);
       if (faqsRes.data && faqsRes.data.length > 0) setFaqs(faqsRes.data);
