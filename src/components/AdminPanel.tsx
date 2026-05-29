@@ -10,6 +10,13 @@ import {
   ExternalLink, Info, Layers, Zap, MousePointer2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import {
+  saveSettings as cmsSaveSettings,
+  insertRow, updateRow, deleteRow,
+  fetchMediaFiles, deleteMediaFile,
+  uploadImage as cmsUploadImage,
+  type MediaFile,
+} from '../lib/cmsUtils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface AdminPanelProps {
@@ -24,7 +31,8 @@ interface AdminPanelProps {
   onOpenSiteEditor?: () => void;
 }
 
-type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'seo' | 'inquiries' | 'media' | 'data';
+type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'inquiries' | 'media' | 'data';
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface Toast { id: string; type: 'success' | 'error' | 'info'; message: string; }
 
@@ -227,6 +235,8 @@ export default function AdminPanel({
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [crudSaveState, setCrudSaveState] = useState<SaveState>('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Data states
@@ -298,23 +308,10 @@ export default function AdminPanel({
   const handleImageUpload = async (field: string, file: File): Promise<string | null> => {
     setIsUploading(field);
     try {
-      const ext = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const filePath = `uploads/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file, {
-        cacheControl: '3600', upsert: false
-      });
-
-      if (uploadError) {
-        if (uploadError.message.includes('bucket')) throw new Error('Storage bucket "images" not found. Create a public bucket named "images" in Supabase.');
-        if (uploadError.message.toLowerCase().includes('policy') || uploadError.message.toLowerCase().includes('permission')) throw new Error('Permission denied. Add INSERT policy for "images" bucket in Supabase Storage.');
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+      const result = await cmsUploadImage(file, field);
+      if (!result.ok || !result.url) throw new Error(result.error || 'Upload failed');
       addToast('success', 'Image uploaded successfully!');
-      return publicUrl;
+      return result.url;
     } catch (err: any) {
       addToast('error', 'Upload error: ' + err.message);
       return null;
@@ -332,16 +329,36 @@ export default function AdminPanel({
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const { id, updated_at, created_at, ...updateData } = settingsForm;
-    const { error } = await supabase.from('site_settings').upsert({ id: 1, ...updateData }, { onConflict: 'id' });
-    if (error) {
-      addToast('error', 'Save error: ' + error.message);
-    } else {
-      addToast('success', 'Settings saved successfully!');
+    setSaveState('saving');
+    try {
+      const result = await cmsSaveSettings(settingsForm);
+      if (!result.ok) throw new Error(result.error || 'Unknown error');
+      setSaveState('saved');
+      addToast('success', '✅ Settings saved successfully!');
       refreshData();
+      // Reset to idle after 3s
+      setTimeout(() => setSaveState('idle'), 3000);
+    } catch (err: any) {
+      setSaveState('error');
+      addToast('error', '❌ Save failed: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
+
+  // CTRL+S handler for settings forms
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if (activeTab === 'hero' || activeTab === 'contact') {
+          e.preventDefault();
+          handleSaveSettings(new Event('submit') as any);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, settingsForm]);
 
   // ── Projects CRUD ───────────────────────────────────────────────────────────
   const blankProject = { title: '', title_de: '', title_en: '', category: '', category_de: '', category_en: '', image_url: '', description: '', description_de: '', description_en: '' };
@@ -350,32 +367,40 @@ export default function AdminPanel({
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const data = {
-      ...projectForm,
-      title: projectForm.title_de || projectForm.title || 'Untitled',
-      category: projectForm.category_de || projectForm.category || 'General',
-      description: projectForm.description_de || projectForm.description || ''
-    };
-    if (editingProject) {
-      const { id, created_at, ...upd } = data as any;
-      const { error } = await supabase.from('projects').update(upd).eq('id', editingProject.id);
-      if (error) { addToast('error', 'Update error: ' + error.message); } else {
-        addToast('success', 'Project updated!'); setEditingProject(null); setProjectForm(blankProject); refreshData();
+    setCrudSaveState('saving');
+    try {
+      const data = {
+        ...projectForm,
+        title: projectForm.title_de || projectForm.title || 'Untitled',
+        category: projectForm.category_de || projectForm.category || 'General',
+        description: projectForm.description_de || projectForm.description || ''
+      };
+      let result;
+      if (editingProject) {
+        result = await updateRow('projects', editingProject.id, data);
+      } else {
+        result = await insertRow('projects', data);
       }
-    } else {
-      const { id, created_at, ...ins } = data as any;
-      const { error } = await supabase.from('projects').insert([ins]);
-      if (error) { addToast('error', 'Error adding: ' + error.message); } else {
-        addToast('success', 'Project added!'); setProjectForm(blankProject); refreshData();
-      }
+      if (!result.ok) throw new Error(result.error || 'Unknown error');
+      setCrudSaveState('saved');
+      addToast('success', editingProject ? '✅ Project updated!' : '✅ Project added!');
+      setEditingProject(null);
+      setProjectForm(blankProject);
+      refreshData();
+      setTimeout(() => setCrudSaveState('idle'), 3000);
+    } catch (err: any) {
+      setCrudSaveState('error');
+      addToast('error', '❌ Error: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const deleteProject = async (project: any) => {
     if (!confirm('Delete this project?')) return;
-    await supabase.from('projects').delete().eq('id', project.id);
-    addToast('success', 'Project deleted.'); refreshData();
+    const result = await deleteRow('projects', project.id);
+    if (result.ok) { addToast('success', 'Project deleted.'); refreshData(); }
+    else addToast('error', 'Delete failed: ' + result.error);
   };
 
   // ── Services CRUD ───────────────────────────────────────────────────────────
@@ -385,23 +410,35 @@ export default function AdminPanel({
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const data = { ...serviceForm, title: serviceForm.title_de || serviceForm.title || 'Service', description: serviceForm.description_de || serviceForm.description || '' };
-    if (editingService) {
-      const { id, created_at, ...upd } = data as any;
-      const { error } = await supabase.from('services').update(upd).eq('id', editingService.id);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'Service updated!'); setEditingService(null); setServiceForm(blankService); refreshData(); }
-    } else {
-      const { id, created_at, ...ins } = data as any;
-      const { error } = await supabase.from('services').insert([ins]);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'Service added!'); setServiceForm(blankService); refreshData(); }
+    setCrudSaveState('saving');
+    try {
+      const data = { ...serviceForm, title: serviceForm.title_de || serviceForm.title || 'Service', description: serviceForm.description_de || serviceForm.description || '' };
+      let result;
+      if (editingService) {
+        result = await updateRow('services', editingService.id, data);
+      } else {
+        result = await insertRow('services', data);
+      }
+      if (!result.ok) throw new Error(result.error || 'Unknown error');
+      setCrudSaveState('saved');
+      addToast('success', editingService ? '✅ Service updated!' : '✅ Service added!');
+      setEditingService(null);
+      setServiceForm(blankService);
+      refreshData();
+      setTimeout(() => setCrudSaveState('idle'), 3000);
+    } catch (err: any) {
+      setCrudSaveState('error');
+      addToast('error', '❌ Error: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const deleteService = async (id: string) => {
     if (!confirm('Delete this service?')) return;
-    await supabase.from('services').delete().eq('id', id);
-    addToast('success', 'Service deleted.'); refreshData();
+    const result = await deleteRow('services', id);
+    if (result.ok) { addToast('success', 'Service deleted.'); refreshData(); }
+    else addToast('error', 'Delete failed: ' + result.error);
   };
 
   // ── FAQs CRUD ───────────────────────────────────────────────────────────────
@@ -411,23 +448,35 @@ export default function AdminPanel({
   const handleSaveFaq = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const data = { ...faqForm, question: faqForm.question_de || faqForm.question || '?', answer: faqForm.answer_de || faqForm.answer || '' };
-    if (editingFaq) {
-      const { id, created_at, ...upd } = data as any;
-      const { error } = await supabase.from('faqs').update(upd).eq('id', editingFaq.id);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'FAQ updated!'); setEditingFaq(null); setFaqForm(blankFaq); refreshData(); }
-    } else {
-      const { id, created_at, ...ins } = data as any;
-      const { error } = await supabase.from('faqs').insert([ins]);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'FAQ added!'); setFaqForm(blankFaq); refreshData(); }
+    setCrudSaveState('saving');
+    try {
+      const data = { ...faqForm, question: faqForm.question_de || faqForm.question || '?', answer: faqForm.answer_de || faqForm.answer || '' };
+      let result;
+      if (editingFaq) {
+        result = await updateRow('faqs', editingFaq.id, data);
+      } else {
+        result = await insertRow('faqs', data);
+      }
+      if (!result.ok) throw new Error(result.error || 'Unknown error');
+      setCrudSaveState('saved');
+      addToast('success', editingFaq ? '✅ FAQ updated!' : '✅ FAQ added!');
+      setEditingFaq(null);
+      setFaqForm(blankFaq);
+      refreshData();
+      setTimeout(() => setCrudSaveState('idle'), 3000);
+    } catch (err: any) {
+      setCrudSaveState('error');
+      addToast('error', '❌ Error: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const deleteFaq = async (id: string) => {
     if (!confirm('Delete this FAQ?')) return;
-    await supabase.from('faqs').delete().eq('id', id);
-    addToast('success', 'FAQ deleted.'); refreshData();
+    const result = await deleteRow('faqs', id);
+    if (result.ok) { addToast('success', 'FAQ deleted.'); refreshData(); }
+    else addToast('error', 'Delete failed: ' + result.error);
   };
 
   // ── Testimonials CRUD ───────────────────────────────────────────────────────
@@ -437,23 +486,85 @@ export default function AdminPanel({
   const handleSaveTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const data = { ...testimonialForm, text: testimonialForm.text_de || testimonialForm.text || '' };
-    if (editingTestimonial) {
-      const { id, created_at, ...upd } = data as any;
-      const { error } = await supabase.from('testimonials').update(upd).eq('id', editingTestimonial.id);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'Testimonial updated!'); setEditingTestimonial(null); setTestimonialForm(blankTestimonial); refreshData(); }
-    } else {
-      const { id, created_at, ...ins } = data as any;
-      const { error } = await supabase.from('testimonials').insert([ins]);
-      if (error) { addToast('error', error.message); } else { addToast('success', 'Testimonial added!'); setTestimonialForm(blankTestimonial); refreshData(); }
+    setCrudSaveState('saving');
+    try {
+      const data = { ...testimonialForm, text: testimonialForm.text_de || testimonialForm.text || '' };
+      let result;
+      if (editingTestimonial) {
+        result = await updateRow('testimonials', editingTestimonial.id, data);
+      } else {
+        result = await insertRow('testimonials', data);
+      }
+      if (!result.ok) throw new Error(result.error || 'Unknown error');
+      setCrudSaveState('saved');
+      addToast('success', editingTestimonial ? '✅ Testimonial updated!' : '✅ Testimonial added!');
+      setEditingTestimonial(null);
+      setTestimonialForm(blankTestimonial);
+      refreshData();
+      setTimeout(() => setCrudSaveState('idle'), 3000);
+    } catch (err: any) {
+      setCrudSaveState('error');
+      addToast('error', '❌ Error: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const deleteTestimonial = async (id: string) => {
     if (!confirm('Delete this testimonial?')) return;
-    await supabase.from('testimonials').delete().eq('id', id);
-    addToast('success', 'Testimonial deleted.'); refreshData();
+    const result = await deleteRow('testimonials', id);
+    if (result.ok) { addToast('success', 'Testimonial deleted.'); refreshData(); }
+    else addToast('error', 'Delete failed: ' + result.error);
+  };
+
+  // ── Media Library ───────────────────────────────────────────────────────────
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+
+  const loadMediaFiles = useCallback(async () => {
+    setLoadingMedia(true);
+    setMediaError(null);
+    try {
+      const files = await fetchMediaFiles(200);
+      setMediaFiles(files);
+    } catch (err: any) {
+      setMediaError(err.message);
+    } finally {
+      setLoadingMedia(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'media') loadMediaFiles();
+  }, [activeTab, loadMediaFiles]);
+
+  const handleDeleteMedia = async (fileName: string) => {
+    if (!confirm(`Delete "${fileName}"?`)) return;
+    const result = await deleteMediaFile(fileName);
+    if (result.ok) {
+      addToast('success', 'File deleted.');
+      setMediaFiles(prev => prev.filter(f => f.name !== fileName));
+    } else {
+      addToast('error', 'Delete failed: ' + result.error);
+    }
+  };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setIsUploading('media_upload');
+    try {
+      const result = await cmsUploadImage(file, 'media');
+      if (!result.ok || !result.url) throw new Error(result.error || 'Upload failed');
+      addToast('success', '✅ File uploaded successfully!');
+      await loadMediaFiles();
+    } catch (err: any) {
+      addToast('error', '❌ Upload error: ' + err.message);
+    } finally {
+      setIsUploading(null);
+    }
   };
 
   // ── Inquiry Management ──────────────────────────────────────────────────────
@@ -535,6 +646,7 @@ export default function AdminPanel({
     { id: 'faqs',         label: 'FAQs',         icon: <HelpCircle size={16} /> },
     { id: 'testimonials', label: 'Testimonials', icon: <Star size={16} /> },
     { id: 'contact',      label: 'Contact & SEO', icon: <Globe size={16} /> },
+    { id: 'media',        label: 'Media Library', icon: <ImageIcon size={16} /> },
     { id: 'inquiries',    label: 'Inquiries',    icon: <Mail size={16} /> },
     { id: 'data',         label: 'Backup & Data', icon: <Database size={16} /> },
   ] as const;
@@ -983,7 +1095,7 @@ export default function AdminPanel({
                       </div>
                     </div>
 
-                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} />
+                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} saveState={saveState} />
                   </form>
                 )}
 
@@ -1034,10 +1146,15 @@ export default function AdminPanel({
                           <input type="number" value={serviceForm.sort_order || 0} onChange={e => setServiceForm(p => ({ ...p, sort_order: parseInt(e.target.value) }))} className={inputCls} />
                         </Field>
                       </div>
-                      <div className="flex gap-3">
-                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingService ? <Save size={16} /> : <Plus size={16} />)}
-                          {editingService ? 'Update Service' : 'Add Service'}
+                      <div className="flex gap-3 items-center">
+                        <button type="submit" disabled={isSaving} className={`button-primary disabled:opacity-50 transition-all ${
+                          crudSaveState === 'saved' ? 'border-green-500/50' : crudSaveState === 'error' ? 'border-red-500/50' : ''
+                        }`}>
+                          {crudSaveState === 'saving' ? <Loader2 size={16} className="animate-spin" /> :
+                           crudSaveState === 'saved' ? <CheckCircle2 size={16} className="text-green-400" /> :
+                           crudSaveState === 'error' ? <AlertCircle size={16} className="text-red-400" /> :
+                           (editingService ? <Save size={16} /> : <Plus size={16} />)}
+                          {crudSaveState === 'saving' ? 'Saving...' : crudSaveState === 'saved' ? 'Saved!' : crudSaveState === 'error' ? 'Failed — Retry' : (editingService ? 'Update Service' : 'Add Service')}
                         </button>
                         {editingService && (
                           <button type="button" onClick={() => { setEditingService(null); setServiceForm(blankService); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
@@ -1126,10 +1243,15 @@ export default function AdminPanel({
                           />
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <button type="submit" disabled={isSaving || !!isUploading} className="button-primary disabled:opacity-50">
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingProject ? <Save size={16} /> : <Plus size={16} />)}
-                          {editingProject ? 'Update Project' : 'Add Project'}
+                      <div className="flex gap-3 items-center">
+                        <button type="submit" disabled={isSaving || !!isUploading} className={`button-primary disabled:opacity-50 transition-all ${
+                          crudSaveState === 'saved' ? 'border-green-500/50' : crudSaveState === 'error' ? 'border-red-500/50' : ''
+                        }`}>
+                          {crudSaveState === 'saving' ? <Loader2 size={16} className="animate-spin" /> :
+                           crudSaveState === 'saved' ? <CheckCircle2 size={16} className="text-green-400" /> :
+                           crudSaveState === 'error' ? <AlertCircle size={16} className="text-red-400" /> :
+                           (editingProject ? <Save size={16} /> : <Plus size={16} />)}
+                          {crudSaveState === 'saving' ? 'Saving...' : crudSaveState === 'saved' ? 'Saved!' : crudSaveState === 'error' ? 'Failed — Retry' : (editingProject ? 'Update Project' : 'Add Project')}
                         </button>
                         {editingProject && (
                           <button type="button" onClick={() => { setEditingProject(null); setProjectForm(blankProject); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
@@ -1210,10 +1332,15 @@ export default function AdminPanel({
                           <input type="number" value={faqForm.sort_order || 0} onChange={e => setFaqForm(p => ({ ...p, sort_order: parseInt(e.target.value) }))} className={inputCls} />
                         </Field>
                       </div>
-                      <div className="flex gap-3">
-                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingFaq ? <Save size={16} /> : <Plus size={16} />)}
-                          {editingFaq ? 'Update FAQ' : 'Add FAQ'}
+                      <div className="flex gap-3 items-center">
+                        <button type="submit" disabled={isSaving} className={`button-primary disabled:opacity-50 transition-all ${
+                          crudSaveState === 'saved' ? 'border-green-500/50' : crudSaveState === 'error' ? 'border-red-500/50' : ''
+                        }`}>
+                          {crudSaveState === 'saving' ? <Loader2 size={16} className="animate-spin" /> :
+                           crudSaveState === 'saved' ? <CheckCircle2 size={16} className="text-green-400" /> :
+                           crudSaveState === 'error' ? <AlertCircle size={16} className="text-red-400" /> :
+                           (editingFaq ? <Save size={16} /> : <Plus size={16} />)}
+                          {crudSaveState === 'saving' ? 'Saving...' : crudSaveState === 'saved' ? 'Saved!' : crudSaveState === 'error' ? 'Failed — Retry' : (editingFaq ? 'Update FAQ' : 'Add FAQ')}
                         </button>
                         {editingFaq && (
                           <button type="button" onClick={() => { setEditingFaq(null); setFaqForm(blankFaq); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
@@ -1306,10 +1433,15 @@ export default function AdminPanel({
                           />
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <button type="submit" disabled={isSaving} className="button-primary disabled:opacity-50">
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingTestimonial ? <Save size={16} /> : <Plus size={16} />)}
-                          {editingTestimonial ? 'Update Testimonial' : 'Add Testimonial'}
+                      <div className="flex gap-3 items-center">
+                        <button type="submit" disabled={isSaving} className={`button-primary disabled:opacity-50 transition-all ${
+                          crudSaveState === 'saved' ? 'border-green-500/50' : crudSaveState === 'error' ? 'border-red-500/50' : ''
+                        }`}>
+                          {crudSaveState === 'saving' ? <Loader2 size={16} className="animate-spin" /> :
+                           crudSaveState === 'saved' ? <CheckCircle2 size={16} className="text-green-400" /> :
+                           crudSaveState === 'error' ? <AlertCircle size={16} className="text-red-400" /> :
+                           (editingTestimonial ? <Save size={16} /> : <Plus size={16} />)}
+                          {crudSaveState === 'saving' ? 'Saving...' : crudSaveState === 'saved' ? 'Saved!' : crudSaveState === 'error' ? 'Failed — Retry' : (editingTestimonial ? 'Update Testimonial' : 'Add Testimonial')}
                         </button>
                         {editingTestimonial && (
                           <button type="button" onClick={() => { setEditingTestimonial(null); setTestimonialForm(blankTestimonial); }} className="px-5 py-3 border border-[#333] text-zinc-400 hover:text-white rounded-sm text-sm font-bold uppercase tracking-widest">
@@ -1457,8 +1589,106 @@ export default function AdminPanel({
                       </div>
                     </div>
 
-                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} />
+                    <SaveButton isSaving={isSaving} isUploading={!!isUploading} saveState={saveState} />
                   </form>
+                )}
+
+                {/* ──────── MEDIA LIBRARY ──────── */}
+                {activeTab === 'media' && (
+                  <div className="space-y-8">
+                    <SectionHeader
+                      icon={<ImageIcon size={20} />}
+                      title="Media Library"
+                      subtitle="All uploaded images stored in Supabase Storage. Upload, copy URL, or delete files."
+                    />
+
+                    {/* Upload area */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">⬆️ Upload New File</h4>
+                        <button
+                          onClick={loadMediaFiles}
+                          disabled={loadingMedia}
+                          className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors"
+                        >
+                          <RefreshCw size={14} className={loadingMedia ? 'animate-spin' : ''} /> Refresh
+                        </button>
+                      </div>
+                      <label className="cursor-pointer block">
+                        <div className={`border-2 border-dashed rounded-sm p-8 text-center transition-all ${
+                          isUploading === 'media_upload'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-[#333] hover:border-primary hover:bg-primary/5'
+                        }`}>
+                          {isUploading === 'media_upload' ? (
+                            <><Loader2 size={32} className="mx-auto animate-spin text-primary mb-3" />
+                            <p className="text-sm font-black text-primary">Uploading to Supabase Storage...</p></>
+                          ) : (
+                            <><Upload size={32} className="mx-auto text-zinc-600 mb-3" />
+                            <p className="text-sm font-black text-white">Click to upload or drag & drop</p>
+                            <p className="text-xs text-zinc-600 mt-1">PNG, JPG, WebP, GIF, SVG — up to 10MB</p></>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={!!isUploading}
+                          onChange={handleMediaUpload}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Error state */}
+                    {mediaError && (
+                      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-sm flex items-start gap-3">
+                        <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-black text-red-400">Failed to load media files</p>
+                          <p className="text-xs text-red-400/70 mt-1">{mediaError}</p>
+                          <button onClick={loadMediaFiles} className="text-xs text-red-400 hover:text-white underline mt-2">Try again</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Loading state */}
+                    {loadingMedia && (
+                      <div className="flex justify-center py-16">
+                        <div className="text-center">
+                          <Loader2 className="animate-spin text-primary mx-auto mb-3" size={36} />
+                          <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Loading from Supabase Storage...</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!loadingMedia && !mediaError && mediaFiles.length === 0 && (
+                      <div className="py-16 text-center border-2 border-dashed border-[#1a1a1a] rounded-sm">
+                        <div className="text-5xl mb-4">🖼️</div>
+                        <p className="text-xs font-black uppercase tracking-widest text-zinc-600">No files uploaded yet</p>
+                        <p className="text-xs text-zinc-700 mt-2">Upload an image using the area above to get started.</p>
+                      </div>
+                    )}
+
+                    {/* Media Grid */}
+                    {!loadingMedia && mediaFiles.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-xs text-zinc-500 font-bold">{mediaFiles.length} file{mediaFiles.length !== 1 ? 's' : ''} in storage</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {mediaFiles.map(file => (
+                            <MediaCard
+                              key={file.name}
+                              file={file}
+                              onDelete={handleDeleteMedia}
+                              onCopy={(url) => { navigator.clipboard.writeText(url); addToast('info', 'URL copied to clipboard!'); }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* ──────── INQUIRIES ──────── */}
@@ -1607,18 +1837,27 @@ export default function AdminPanel({
 }
 
 // ─── Save Button ──────────────────────────────────────────────────────────────
-function SaveButton({ isSaving, isUploading }: { isSaving: boolean; isUploading: boolean }) {
+function SaveButton({ isSaving, isUploading, saveState }: { isSaving: boolean; isUploading: boolean; saveState?: 'idle' | 'saving' | 'saved' | 'error' }) {
+  const state = saveState || (isSaving ? 'saving' : 'idle');
   return (
     <div className="sticky bottom-0 pt-6 pb-2 bg-gradient-to-t from-black/80 to-transparent">
       <button
         type="submit"
         disabled={isSaving || isUploading}
-        className="button-primary w-full justify-center gap-3 py-5 text-base disabled:opacity-50 shadow-[0_0_40px_rgba(255,117,31,0.3)]"
+        className={`button-primary w-full justify-center gap-3 py-5 text-base disabled:opacity-50 transition-all ${
+          state === 'saved' ? 'shadow-[0_0_40px_rgba(34,197,94,0.4)] border-green-500/50' :
+          state === 'error' ? 'shadow-[0_0_40px_rgba(239,68,68,0.4)] border-red-500/50' :
+          'shadow-[0_0_40px_rgba(255,117,31,0.3)]'
+        }`}
       >
-        {isSaving ? (
-          <><Loader2 size={20} className="animate-spin" /> Saving...</>
+        {state === 'saving' ? (
+          <><Loader2 size={20} className="animate-spin" /> Saving to database...</>
+        ) : state === 'saved' ? (
+          <><CheckCircle2 size={20} className="text-green-400" /> Saved Successfully! — CTRL+S to save again</>
+        ) : state === 'error' ? (
+          <><AlertCircle size={20} className="text-red-400" /> Save Failed — Click to Retry</>
         ) : (
-          <><Save size={20} /> Save Changes</>
+          <><Save size={20} /> Save Changes — CTRL+S</>  
         )}
       </button>
     </div>
@@ -1631,6 +1870,82 @@ function EmptyState({ label }: { label: string }) {
     <div className="py-16 text-center border-2 border-dashed border-[#1a1a1a] rounded-sm">
       <div className="text-4xl mb-4">📭</div>
       <p className="text-xs font-black uppercase tracking-widest text-zinc-600">{label}</p>
+    </div>
+  );
+}
+
+// ─── Media Card ───────────────────────────────────────────────────────────────
+function MediaCard({ file, onDelete, onCopy }: { file: MediaFile; onDelete: (name: string) => void; onCopy: (url: string) => void }) {
+  const [copied, setCopied] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const handleCopy = () => {
+    onCopy(file.url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const sizeStr = file.size
+    ? file.size > 1024 * 1024
+      ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`
+    : '';
+
+  return (
+    <div className="group relative bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm overflow-hidden hover:border-[#333] transition-colors">
+      {/* Thumbnail */}
+      <div className="relative aspect-square bg-[#080808]">
+        {!imgError ? (
+          <img
+            src={file.url}
+            alt={file.name}
+            className="w-full h-full object-cover opacity-75 group-hover:opacity-100 transition-opacity"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon size={28} className="text-zinc-700" />
+          </div>
+        )}
+        {/* Overlay actions */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <button
+            onClick={handleCopy}
+            title="Copy URL"
+            className="p-2 bg-primary text-black rounded-sm hover:bg-white transition-colors"
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+          </button>
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open in new tab"
+            className="p-2 bg-[#222] text-white rounded-sm hover:bg-[#333] transition-colors"
+          >
+            <ExternalLink size={14} />
+          </a>
+          <button
+            onClick={() => onDelete(file.name)}
+            title="Delete"
+            className="p-2 bg-red-600 text-white rounded-sm hover:bg-red-500 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+      {/* Info */}
+      <div className="p-2">
+        <p className="text-[10px] text-zinc-400 truncate font-bold" title={file.name}>{file.name}</p>
+        <div className="flex items-center justify-between mt-0.5">
+          {sizeStr && <span className="text-[9px] text-zinc-600">{sizeStr}</span>}
+          {file.createdAt && (
+            <span className="text-[9px] text-zinc-700">
+              {new Date(file.createdAt).toLocaleDateString('de-DE')}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
