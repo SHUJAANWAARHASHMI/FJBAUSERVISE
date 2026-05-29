@@ -755,9 +755,100 @@ export default function AdminPanel({
                       <Field label="Company Name" required>
                         <input type="text" value={settingsForm.name || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, name: e.target.value }))} className={inputCls} placeholder="FJ BAUSERVICE" />
                       </Field>
-                      <Field label="Logo URL">
-                        <input type="text" value={settingsForm.logo_url || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, logo_url: e.target.value }))} className={inputCls} placeholder="https://..." />
-                      </Field>
+
+                      {/* ── Logo Upload + Scale ── */}
+                      <div className="md:col-span-2 p-5 border border-[#222] rounded-sm bg-[#080808] space-y-5">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-primary">🖼️ Company Logo</span>
+                          <span className="text-[10px] text-zinc-600 ml-1">— Upload from computer or paste URL</span>
+                        </div>
+
+                        {/* Preview + Upload row */}
+                        <div className="flex flex-col sm:flex-row gap-5 items-start">
+                          {/* Preview box */}
+                          <div className="shrink-0 w-36 h-28 border-2 border-dashed border-[#333] rounded-sm flex items-center justify-center bg-[#0a0a0a] overflow-hidden relative group">
+                            {settingsForm.logo_url ? (
+                              <>
+                                <img
+                                  src={settingsForm.logo_url}
+                                  alt="Logo preview"
+                                  style={{ transform: `scale(${parseFloat(settingsForm.logo_scale || '1') || 1})`, transformOrigin: 'center', transition: 'transform 0.3s' }}
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setSettingsForm((p: any) => ({ ...p, logo_url: '' }))}
+                                  className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-zinc-700 text-[10px] font-bold uppercase tracking-wider text-center px-2">No logo<br/>yet</span>
+                            )}
+                          </div>
+
+                          {/* Upload controls */}
+                          <div className="flex-1 space-y-3">
+                            {/* Browse button */}
+                            <label className="cursor-pointer">
+                              <div className="flex items-center gap-2 px-4 py-2.5 bg-primary text-black font-black text-[11px] uppercase tracking-widest rounded-sm hover:bg-white transition-colors w-fit">
+                                {isUploading === 'logo_url' ? (
+                                  <><Loader2 size={14} className="animate-spin" /> Uploading...</>
+                                ) : (
+                                  <><Upload size={14} /> Browse &amp; Upload Logo</>
+                                )}
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={!!isUploading}
+                                onChange={async e => {
+                                  const f = e.target.files?.[0];
+                                  if (f) await uploadAndSetSettings('logo_url', f);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+
+                            {/* Or paste URL */}
+                            <input
+                              type="text"
+                              value={settingsForm.logo_url || ''}
+                              onChange={e => setSettingsForm((p: any) => ({ ...p, logo_url: e.target.value }))}
+                              className={`${inputCls} text-xs`}
+                              placeholder="Or paste logo URL here..."
+                            />
+                          </div>
+                        </div>
+
+                        {/* Scale Slider */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-primary">Logo Size Scale</label>
+                            <span className="text-[11px] font-black text-white bg-primary/20 border border-primary/40 px-2 py-0.5 rounded-sm">
+                              {parseFloat(settingsForm.logo_scale || '1').toFixed(1)}×
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="3"
+                            step="0.1"
+                            value={parseFloat(settingsForm.logo_scale || '1') || 1}
+                            onChange={e => setSettingsForm((p: any) => ({ ...p, logo_scale: e.target.value }))}
+                            className="w-full accent-primary cursor-pointer"
+                          />
+                          <div className="flex justify-between text-[9px] text-zinc-600 font-bold">
+                            <span>0.5× (Small)</span>
+                            <span>1.0× (Default)</span>
+                            <span>2.0× (Large)</span>
+                            <span>3.0× (XL)</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-600 italic">Adjust the logo display size in the navbar and footer. Preview updates instantly above.</p>
+                        </div>
+                      </div>
                       <div className="md:col-span-2">
                         <BilingualInput
                           labelDe="Slogan (Deutsch)" labelEn="Slogan (English)"
@@ -827,8 +918,6 @@ export default function AdminPanel({
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🖼️ Website Images</h4>
                       <div className="grid md:grid-cols-2 gap-8">
                         {[
-                          { id: 'logo_url', label: 'Company Logo' },
-                          { id: 'hero_image_url', label: 'Hero Background Image' },
                           { id: 'about_image_url', label: 'About Us Image' },
                           { id: 'cta_image_url', label: 'CTA Background Image' },
                           { id: 'contact_image_url', label: 'Contact Section Image' },
@@ -1578,6 +1667,7 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS og_image_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_weekdays text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_saturday text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hours_sunday text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_scale text DEFAULT '1';
 
 -- 2. SERVICES TABLE
 CREATE TABLE IF NOT EXISTS services (
