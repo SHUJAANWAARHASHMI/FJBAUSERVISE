@@ -69,7 +69,9 @@ export async function saveSettings(
   settings: Record<string, any>
 ): Promise<SaveResult> {
   const payload = stripSystemFields(settings);
-  console.log('[CMS] saveSettings — writing', Object.keys(payload).length, 'fields to site_settings row id=1');
+  const fieldCount = Object.keys(payload).length;
+  console.log(`[CMS] saveSettings — upserting ${fieldCount} fields to site_settings id=1`);
+  console.log('[CMS] saveSettings — payload keys:', Object.keys(payload));
 
   try {
     const data = await withRetry(async () => {
@@ -79,11 +81,37 @@ export async function saveSettings(
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[CMS] saveSettings — Supabase error:', error.code, error.message, error.details);
+        throw error;
+      }
       return data;
     }, 'saveSettings');
 
-    console.log('[CMS] saveSettings — SUCCESS, returned row:', data?.id);
+    // Post-save spot verification: pick one changed field and confirm it matches
+    const changedKeys = Object.keys(payload).filter(k => payload[k] !== undefined);
+    if (changedKeys.length > 0) {
+      const checkKey = changedKeys[0];
+      const { data: verifyRow, error: verifyErr } = await supabase
+        .from('site_settings')
+        .select(checkKey)
+        .eq('id', 1)
+        .single();
+      
+      if (verifyErr) {
+        console.warn('[CMS] saveSettings — verification read failed:', verifyErr.message);
+      } else {
+        const saved = (verifyRow as any)?.[checkKey];
+        const expected = payload[checkKey];
+        if (String(saved) === String(expected ?? '')) {
+          console.log(`[CMS] saveSettings — VERIFIED: ${checkKey} = "${saved}"`);
+        } else {
+          console.error(`[CMS] saveSettings — VERIFICATION FAILED: ${checkKey} expected "${expected}" got "${saved}"`);
+        }
+      }
+    }
+
+    console.log('[CMS] saveSettings — SUCCESS, row id:', data?.id);
     return { ok: true, data };
   } catch (err: any) {
     const msg = err?.message || String(err);

@@ -74,11 +74,15 @@ export function EditableText({
   const ref = useRef<HTMLElement>(null);
   const [focused, setFocused] = useState(false);
 
-  // Keep DOM in sync with value when not focused
+  // Keep DOM in sync with value ONLY on initial mount or external value changes
+  // NEVER overwrite while the user is focused (typing)
+  const lastExternalValue = useRef(value);
   useEffect(() => {
     if (!focused && ref.current) {
-      const current = ref.current.innerText;
-      if (current !== value) {
+      // Only update DOM if the external value actually changed
+      // This prevents server responses from overwriting in-progress edits
+      if (value !== lastExternalValue.current) {
+        lastExternalValue.current = value;
         ref.current.innerText = value ?? '';
       }
     }
