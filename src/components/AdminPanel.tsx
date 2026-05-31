@@ -872,8 +872,15 @@ export default function AdminPanel({
                         <Database size={18} className="text-primary" />
                         <h4 className="font-black text-sm uppercase tracking-widest text-primary">Database Setup Required</h4>
                       </div>
+                      <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-sm space-y-3">
+                        <p className="text-xs text-red-300 font-bold leading-relaxed">⚠️ STEP 1: Run this Quick Fix SQL in Supabase SQL Editor</p>
+                        <QuickFixSqlBox />
+                        <p className="text-[10px] text-zinc-500">
+                          <strong className="text-zinc-300">STEP 2:</strong> Go to Supabase → Settings → API → click <strong className="text-zinc-300">Reload Schema Cache</strong>
+                        </p>
+                      </div>
                       <p className="text-xs text-zinc-500 leading-relaxed">
-                        Run this SQL in your Supabase SQL Editor to enable all CMS features (services, FAQs, testimonials, SEO):
+                        Or run the complete setup SQL below to create all tables and columns:
                       </p>
                       <SqlSetupBox />
                     </div>
@@ -1815,8 +1822,15 @@ export default function AdminPanel({
                         <Database size={18} className="text-primary" />
                         <h4 className="font-black text-sm uppercase tracking-widest text-primary">Database Migration SQL</h4>
                       </div>
+                      <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-sm space-y-3">
+                        <p className="text-xs text-red-300 font-bold leading-relaxed">⚠️ STEP 1: Run this Quick Fix SQL in Supabase SQL Editor</p>
+                        <QuickFixSqlBox />
+                        <p className="text-[10px] text-zinc-500">
+                          <strong className="text-zinc-300">STEP 2:</strong> Go to Supabase → Settings → API → click <strong className="text-zinc-300">Reload Schema Cache</strong>
+                        </p>
+                      </div>
                       <p className="text-xs text-zinc-500 leading-relaxed">
-                        Run this complete SQL in your <strong className="text-white">Supabase SQL Editor</strong> to create all required tables and columns for the enhanced CMS:
+                        Or run the complete SQL below to create all tables and columns from scratch:
                       </p>
                       <SqlSetupBox />
                     </div>
@@ -1959,15 +1973,47 @@ function MediaCard({ file, onDelete, onCopy }: { file: MediaFile; onDelete: (nam
   );
 }
 
+// ─── Quick Fix SQL Box (4 missing columns only) ──────────────────────────────
+function QuickFixSqlBox() {
+  const [copied, setCopied] = useState(false);
+  const sql = `-- QUICK FIX: Add 4 missing columns to site_settings
+-- Run in Supabase SQL Editor → then Settings → API → Reload Schema Cache
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS faq_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_banner_heading text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_banner_sub text;`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(sql);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleCopy}
+        className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 border border-red-800/50 hover:border-red-500/50 px-3 py-1.5 rounded-sm transition-colors bg-[#0a0a0a]"
+      >
+        {copied ? <><Check size={12} className="text-green-400" /> Copied!</> : <><Copy size={12} /> Copy SQL</>}
+      </button>
+      <pre className="text-[10px] bg-[#050505] border border-red-900/40 p-4 pt-10 overflow-x-auto text-red-300/80 font-mono leading-relaxed rounded-sm select-all">
+        {sql}
+      </pre>
+    </div>
+  );
+}
+
 // ─── SQL Setup Box ────────────────────────────────────────────────────────────
 function SqlSetupBox() {
   const [copied, setCopied] = useState(false);
   const sql = `-- ═══════════════════════════════════════════════════════════
 -- FJ BAUSERVICE - Complete CMS Database Setup
 -- Run this in your Supabase SQL Editor
+-- After running: Settings → API → Reload Schema Cache
 -- ═══════════════════════════════════════════════════════════
 
--- 1. SITE SETTINGS - Add all new columns
+-- 1. SITE SETTINGS - Add all new columns (safe to re-run)
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_url text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_de text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS slogan_en text;
@@ -2023,6 +2069,9 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS projects_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS projects_subtitle text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS faq_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_title text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_subtitle text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_banner_heading text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_banner_sub text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_1_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_1_desc text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_2_title text;
@@ -2031,6 +2080,7 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_3_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_3_desc text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_4_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whyus_4_desc text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS faq_subtitle text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_title text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_subtitle text;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS footer_copyright text;
