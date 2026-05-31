@@ -326,25 +326,33 @@ export default function AdminPanel({
   };
 
   // ── Save Settings ──────────────────────────────────────────────────────────
+  // settingsFormRef always mirrors latest settingsForm — fixes stale-closure in CTRL+S
+  const settingsFormRef = useRef<any>(settingsForm);
+  useEffect(() => { settingsFormRef.current = settingsForm; });
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveState('saving');
     try {
-      const result = await cmsSaveSettings(settingsForm);
+      // Read from ref to always get the latest form values (not stale closure)
+      const result = await cmsSaveSettings(settingsFormRef.current);
       if (!result.ok) throw new Error(result.error || 'Unknown error');
       setSaveState('saved');
-      addToast('success', '✅ Settings saved successfully!');
+      addToast('success', '✅ Einstellungen gespeichert!');
       refreshData();
-      // Reset to idle after 3s
       setTimeout(() => setSaveState('idle'), 3000);
     } catch (err: any) {
       setSaveState('error');
-      addToast('error', '❌ Save failed: ' + err.message);
+      addToast('error', '❌ Speichern fehlgeschlagen: ' + err.message);
     } finally {
       setIsSaving(false);
     }
   };
+
+  // handleSaveSettingsRef: always calls the latest handleSaveSettings (for CTRL+S timer)
+  const handleSaveSettingsRef = useRef(handleSaveSettings);
+  useEffect(() => { handleSaveSettingsRef.current = handleSaveSettings; });
 
   // CTRL+S handler for settings forms
   useEffect(() => {
@@ -352,13 +360,14 @@ export default function AdminPanel({
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         if (activeTab === 'hero' || activeTab === 'contact') {
           e.preventDefault();
-          handleSaveSettings(new Event('submit') as any);
+          // Use ref so we always call the latest version, never a stale closure
+          handleSaveSettingsRef.current(new Event('submit') as any);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, settingsForm]);
+  }, [activeTab]); // no settingsForm dep — handled via ref
 
   // ── Projects CRUD ───────────────────────────────────────────────────────────
   const blankProject = { title: '', title_de: '', title_en: '', category: '', category_de: '', category_en: '', image_url: '', description: '', description_de: '', description_en: '' };

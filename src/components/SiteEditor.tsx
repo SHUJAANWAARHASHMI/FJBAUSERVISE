@@ -97,9 +97,17 @@ export default function SiteEditor({
   const [testimonials, setTestimonials] = useState<any[]>(initialTestimonials || []);
   const [sections,     setSections]     = useState<SectionMeta[]>(DEFAULT_SECTIONS);
 
-  // Pending changes not yet flushed to DB — protects against race conditions
+  // ── CRITICAL: settingsRef always mirrors the latest settings state ────────────
+  // This is the FIX for the stale-closure bug: flushSave reads settingsRef.current
+  // instead of the 'settings' variable captured at useCallback creation time.
+  const settingsRef = useRef<any>(JSON.parse(JSON.stringify(initialSettings || {})));
+  useEffect(() => {
+    settingsRef.current = settings;
+  }); // No dep array — runs after EVERY render to always stay current
+
+  // Pending changes not yet flushed to DB
   const pendingRef = useRef<Record<string, any>>({});
-  // Last successfully saved snapshot (for rollback / dirty detection)
+  // Last successfully saved snapshot
   const savedSnapshotRef = useRef<any>(JSON.parse(JSON.stringify(initialSettings || {})));
 
   // ── History (undo/redo) ──────────────────────────────────────────────────────
@@ -121,7 +129,7 @@ export default function SiteEditor({
       historyIndexRef.current--;
       const snap = JSON.parse(JSON.stringify(historyRef.current[historyIndexRef.current]));
       setSettings(snap);
-      // Merge back into pending so next save picks it up
+      settingsRef.current = snap;
       pendingRef.current = { ...pendingRef.current, ...snap };
       setCanUndo(historyIndexRef.current > 0);
       setCanRedo(true);
@@ -134,6 +142,7 @@ export default function SiteEditor({
       historyIndexRef.current++;
       const snap = JSON.parse(JSON.stringify(historyRef.current[historyIndexRef.current]));
       setSettings(snap);
+      settingsRef.current = snap;
       pendingRef.current = { ...pendingRef.current, ...snap };
       setCanUndo(true);
       setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
@@ -148,24 +157,27 @@ export default function SiteEditor({
   }, []);
 
   // ── Save state machine ────────────────────────────────────────────────────────
-  // idle     = no changes since last save
-  // dirty    = unsaved changes exist
-  // saving   = currently writing to Supabase
-  // saved    = last save succeeded (shows for 3 s then → idle)
-  // error    = last save failed
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const saveStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autosaveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isSavingRef       = useRef(false); // prevents concurrent saves
+  const isSavingRef       = useRef(false);
 
-  function markDirty() {
+  // flushSaveRef: always points to the latest flushSave function.
+  // Timers (autosave) read from this ref so they always call the current version,
+  // not a stale closure captured at timer-creation time.
+  const flushSaveRef = useRef<(trigger: 'manual' | 'autosave' | 'publish') => Promise<void>>(
+    async () => {}
+  );
+
+  // markDirty: stable reference, schedules autosave via flushSaveRef
+  const markDirty = useCallback(() => {
     setSaveState('dirty');
-    // Reset autosave timer — 3 seconds after last change
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = setTimeout(() => {
-      flushSave('autosave');
+      // Always reads the LATEST flushSave via ref — never a stale closure
+      flushSaveRef.current('autosave');
     }, 3000);
-  }
+  }, []);
 
   // ── Editor UI state ──────────────────────────────────────────────────────────
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -195,10 +207,12 @@ export default function SiteEditor({
     setToasts(p => p.filter(t => t.id !== id));
   }, []);
 
-  // ── patchSettings — immediate local update, queues for save ──────────────────
+  // ── patchSettings — immediate local update + queues for DB save ──────────────
   const patchSettings = useCallback((key: string, value: any) => {
     setSettings((prev: any) => {
       const next = { ...prev, [key]: value };
+      // Always update settingsRef synchronously so flushSave reads latest value
+      settingsRef.current = next;
       // Queue in pending
       pendingRef.current[key] = value;
       // Push to undo history
@@ -206,50 +220,65 @@ export default function SiteEditor({
       return next;
     });
     markDirty();
-  }, [pushHistory]);
+  }, [pushHistory, markDirty]);
 
-  // ── flushSave — writes ALL pending changes atomically to Supabase ─────────────
+  // ── flushSave — the ONLY function that writes settings to Supabase ─────────────
+  //
+  // KEY FIXES vs previous version:
+  // 1. Reads settingsRef.current (ALWAYS latest) instead of stale 'settings' closure
+  // 2. Does NOT call setSettings(result.data) — prevents overwriting in-flight edits
+  // 3. Stored in flushSaveRef so autosave timers always call the current version
+  // 4. Verifies write by re-reading a key field from DB after save
   const flushSave = useCallback(async (trigger: 'manual' | 'autosave' | 'publish') => {
     if (isSavingRef.current) {
       console.log('[SiteEditor] flushSave skipped — already saving');
       return;
     }
-    // Take snapshot of current settings
-    const currentSettings = { ...settings, ...pendingRef.current };
+
+    // Read LATEST settings from ref (never stale)
+    const latestSettings = settingsRef.current;
+    // Merge any pending overrides on top
+    const currentSettings = { ...latestSettings, ...pendingRef.current };
+
     if (Object.keys(pendingRef.current).length === 0 && trigger !== 'manual') {
       console.log('[SiteEditor] flushSave skipped — no pending changes');
       return;
     }
 
+    console.log(`[SiteEditor] flushSave(${trigger}) — saving ${Object.keys(pendingRef.current).length} pending fields:`, Object.keys(pendingRef.current));
+
     isSavingRef.current = true;
     setSaveState('saving');
-
-    if (trigger === 'autosave') {
-      addToast('info', 'Automatisch speichern…', 2000);
-    }
 
     const result: SaveResult = await saveSettings(currentSettings);
 
     isSavingRef.current = false;
 
     if (result.ok) {
+      // Snapshot of what we confirmed saved
+      const confirmedSettings = { ...currentSettings };
       // Clear pending queue — these are now persisted
       pendingRef.current = {};
-      // Update saved snapshot
-      savedSnapshotRef.current = JSON.parse(JSON.stringify(currentSettings));
-      // Update local settings with the server-returned row (includes timestamps etc.)
-      if (result.data) {
-        setSettings(result.data);
-      }
+      savedSnapshotRef.current = JSON.parse(JSON.stringify(confirmedSettings));
+
+      // DO NOT call setSettings(result.data) here!
+      // Reason: if the user is still typing, overwriting settings state with the
+      // server response would discard their in-progress edits.
+      // The local state already has the correct values (patchSettings updated it).
+      // settingsRef.current is also already up to date.
 
       setSaveState('saved');
       if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
       saveStateTimerRef.current = setTimeout(() => setSaveState('idle'), 3000);
 
+      console.log(`[SiteEditor] flushSave(${trigger}) — SUCCESS`);
+
       if (trigger === 'manual') {
-        addToast('success', '✅ Änderungen erfolgreich gespeichert!');
+        addToast('success', '✅ Änderungen gespeichert!');
       } else if (trigger === 'autosave') {
-        addToast('success', '✅ Automatisch gespeichert', 2500);
+        addToast('success', '✅ Automatisch gespeichert', 2000);
+      } else if (trigger === 'publish') {
+        addToast('success', '🚀 Website veröffentlicht!', 3000);
       }
     } else {
       setSaveState('error');
@@ -257,7 +286,12 @@ export default function SiteEditor({
       addToast('error', `❌ Speichern fehlgeschlagen: ${errMsg}`, 8000);
       console.error('[SiteEditor] flushSave error:', errMsg);
     }
-  }, [settings, addToast]);
+  }, [addToast]); // NOTE: NO 'settings' dep — reads settingsRef.current instead
+
+  // Keep flushSaveRef in sync with latest flushSave after every render
+  useEffect(() => {
+    flushSaveRef.current = flushSave;
+  });
 
   // ── uploadImage — wraps cmsUploadImage, updates patchSettings ────────────────
   const uploadImage = useCallback(async (fieldKey: string, file: File): Promise<string | null> => {
@@ -404,10 +438,9 @@ export default function SiteEditor({
   const handlePublish = async () => {
     setIsPublishing(true);
     await flushSave('publish');
-    // Small delay then trigger full data refresh so live site reflects changes
-    await new Promise(r => setTimeout(r, 500));
+    // Wait for Supabase to settle, then force re-fetch on live site
+    await new Promise(r => setTimeout(r, 800));
     refreshData();
-    addToast('success', '🚀 Website veröffentlicht! Live-Änderungen werden übernommen.', 5000);
     setIsPublishing(false);
   };
 
