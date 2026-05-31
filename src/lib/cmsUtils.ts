@@ -6,6 +6,7 @@
  *  - Failed writes are retried up to MAX_RETRIES times with exponential backoff
  *  - A structured error is always thrown/returned so the UI can react
  *  - Debug logs are always printed to the console so developers can trace issues
+ *  - Unknown fields are stripped before upsert to prevent PGRST204 errors
  */
 
 import { supabase } from './supabase';
@@ -13,6 +14,61 @@ import { supabase } from './supabase';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 600; // first retry after 600 ms, second after 1200 ms, etc.
+
+// ─── KNOWN COLUMNS whitelist ──────────────────────────────────────────────────
+// This is the authoritative list of all columns in the site_settings table.
+// Any key NOT in this list is stripped before upserting to prevent PGRST204.
+// When you add a new column to the DB, add it here too.
+export const SITE_SETTINGS_COLUMNS = new Set([
+  // System
+  'id', 'created_at', 'updated_at',
+  // Identity
+  'name', 'slogan', 'slogan_de', 'slogan_en', 'description', 'description_de', 'description_en',
+  // Branding
+  'logo_url', 'logo_scale', 'primary_color',
+  // Hero section
+  'hero_heading_de', 'hero_heading_en',
+  'hero_subtext_de', 'hero_subtext_en',
+  'hero_button_de', 'hero_button_en',
+  'hero_cta_label', 'hero_image_url',
+  'stats_years', 'stats_projects',
+  'stat_label_1_de', 'stat_label_2_de',
+  // Services section
+  'services_title', 'services_subtitle',
+  // Projects section
+  'projects_title', 'projects_subtitle',
+  // WhyUs section
+  'whyus_title', 'whyus_subtitle',
+  'whyus_1_title', 'whyus_1_desc',
+  'whyus_2_title', 'whyus_2_desc',
+  'whyus_3_title', 'whyus_3_desc',
+  'whyus_4_title', 'whyus_4_desc',
+  'whyus_banner_heading', 'whyus_banner_sub',
+  // FAQ section
+  'faq_title', 'faq_subtitle',
+  // CTA section
+  'cta_title_de', 'cta_title_en',
+  'cta_subtitle_de', 'cta_subtitle_en',
+  'cta_button_de', 'cta_button_en',
+  'cta_image_url',
+  // Contact section
+  'contact_title', 'contact_subtitle',
+  'phone', 'email',
+  'address', 'address_de', 'address_en',
+  'hours_weekdays', 'hours_saturday', 'hours_sunday',
+  'whatsapp_number', 'google_maps_url',
+  'contact_image_url',
+  // About section
+  'about_image_url',
+  // Footer
+  'footer_copyright', 'footer_image_url',
+  // Social
+  'instagram_url', 'facebook_url', 'linkedin_url', 'tiktok_url',
+  // SEO
+  'seo_title_de', 'seo_title_en',
+  'seo_description_de', 'seo_description_en',
+  'seo_keywords', 'og_image_url',
+]);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface SaveResult {
@@ -32,9 +88,32 @@ function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function stripSystemFields(obj: Record<string, any>) {
-  const { id, created_at, updated_at, ...rest } = obj;
-  return rest;
+/**
+ * Strip system fields AND any unknown fields that don't exist in the DB schema.
+ * This prevents PGRST204 errors when component fields are added before DB columns.
+ */
+function sanitizePayload(obj: Record<string, any>) {
+  const result: Record<string, any> = {};
+  const unknown: string[] = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === 'id' || key === 'created_at' || key === 'updated_at') continue;
+    if (SITE_SETTINGS_COLUMNS.has(key)) {
+      result[key] = value;
+    } else {
+      unknown.push(key);
+    }
+  }
+
+  if (unknown.length > 0) {
+    console.warn(
+      `[CMS] sanitizePayload — stripped ${unknown.length} unknown field(s):`,
+      unknown.join(', '),
+      '\n  → Add these columns to Supabase AND to SITE_SETTINGS_COLUMNS in cmsUtils.ts'
+    );
+  }
+
+  return result;
 }
 
 /** Retry wrapper — runs `fn` up to MAX_RETRIES times */
@@ -62,16 +141,20 @@ async function withRetry<T>(
 
 /**
  * Save (upsert) the site_settings row.
- * Strips system fields, always uses id=1, retries on failure.
+ * Strips system fields + unknown fields (prevents PGRST204), always uses id=1, retries on failure.
  * Returns { ok, error?, data? }
  */
 export async function saveSettings(
   settings: Record<string, any>
 ): Promise<SaveResult> {
-  const payload = stripSystemFields(settings);
+  const payload = sanitizePayload(settings);
   const fieldCount = Object.keys(payload).length;
-  console.log(`[CMS] saveSettings — upserting ${fieldCount} fields to site_settings id=1`);
-  console.log('[CMS] saveSettings — payload keys:', Object.keys(payload));
+  const totalFields = Object.keys(settings).length;
+
+  console.log(`[CMS] saveSettings — upserting ${fieldCount}/${totalFields} fields to site_settings id=1`);
+  if (fieldCount < totalFields) {
+    console.log('[CMS] saveSettings — note: some fields were stripped (unknown columns)');
+  }
 
   try {
     const data = await withRetry(async () => {
@@ -97,7 +180,7 @@ export async function saveSettings(
         .select(checkKey)
         .eq('id', 1)
         .single();
-      
+
       if (verifyErr) {
         console.warn('[CMS] saveSettings — verification read failed:', verifyErr.message);
       } else {
