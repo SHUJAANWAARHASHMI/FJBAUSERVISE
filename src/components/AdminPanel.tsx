@@ -1594,14 +1594,42 @@ export default function AdminPanel({
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🕐 Opening Hours</h4>
                       <div className="grid md:grid-cols-2 gap-6">
                         <Field label="Weekdays (Mon–Fri)">
-                          <input type="text" value={settingsForm.hours_weekdays || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_weekdays: e.target.value }))} className={inputCls} placeholder="07:00 – 18:00" />
+                          <input type="text" value={settingsForm.hours_weekdays || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_weekdays: e.target.value }))} className={inputCls} placeholder="Mo–Fr: 08:00–18:00" />
                         </Field>
                         <Field label="Saturday">
-                          <input type="text" value={settingsForm.hours_saturday || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_saturday: e.target.value }))} className={inputCls} placeholder="08:00 – 14:00" />
+                          <input type="text" value={settingsForm.hours_saturday || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_saturday: e.target.value }))} className={inputCls} placeholder="Sa: 09:00–14:00" />
                         </Field>
-                        <Field label="Sunday">
+                        <Field label="Sunday / Holiday">
                           <input type="text" value={settingsForm.hours_sunday || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, hours_sunday: e.target.value }))} className={inputCls} placeholder="Geschlossen" />
                         </Field>
+                      </div>
+                    </div>
+
+                    {/* Footer Settings */}
+                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🦶 Footer Settings</h4>
+                      <div className="space-y-4">
+                        <Field label="Copyright Text" hint="Shown in the bottom bar of the footer. Use {year} to auto-insert the current year.">
+                          <input
+                            type="text"
+                            value={settingsForm.footer_copyright || ''}
+                            onChange={e => setSettingsForm((p: any) => ({ ...p, footer_copyright: e.target.value }))}
+                            className={inputCls}
+                            placeholder={`© ${new Date().getFullYear()} FJ BAUSERVICE. Alle Rechte vorbehalten.`}
+                          />
+                        </Field>
+                        <Field label="WhatsApp Number" hint="Include country code, e.g. +49 159 06142923">
+                          <input
+                            type="text"
+                            value={settingsForm.whatsapp_number || ''}
+                            onChange={e => setSettingsForm((p: any) => ({ ...p, whatsapp_number: e.target.value }))}
+                            className={inputCls}
+                            placeholder="+49 159 06142923"
+                          />
+                        </Field>
+                        <p className="text-[10px] text-zinc-600 italic leading-tight">
+                          💡 Logo, company name, address, phone, email, social links are all editable above and reflected in the footer automatically.
+                        </p>
                       </div>
                     </div>
 

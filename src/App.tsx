@@ -353,13 +353,24 @@ export default function App() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="heading-dynamic text-4xl animate-pulse text-gray-300 tracking-[0.2em]">LOADING</div>
-      </div>
-    );
-  }
+  // ── Dynamic Favicon from logo_url ─────────────────────────────────────────
+  useEffect(() => {
+    const logoUrl = siteSettings?.logo_url;
+    if (!logoUrl) return;
+    // Update all favicon link tags to point at the logo stored in Supabase
+    const selectors = [
+      'link[rel="icon"]',
+      'link[rel="shortcut icon"]',
+      'link[rel="apple-touch-icon"]',
+    ];
+    selectors.forEach(sel => {
+      const el = document.querySelector(sel) as HTMLLinkElement | null;
+      if (el) { el.href = logoUrl; }
+    });
+  }, [siteSettings?.logo_url]);
+
+  // No hard loading gate — render the shell immediately, content fills in
+  // (isLoading is still tracked so child components can show skeletons if needed)
 
   return (
     <div className="min-h-screen bg-white transition-colors duration-500">
