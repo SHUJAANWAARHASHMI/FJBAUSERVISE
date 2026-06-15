@@ -304,13 +304,13 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
             </p>
             <div className="flex flex-wrap items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
               <button
-                onClick={() => !isEditing && setCurrentPage('legal')}
+                onClick={() => !isEditing && setCurrentPage('imprint')}
                 className="text-gray-400 hover:text-gray-700 transition-colors"
               >
                 {t.footer?.impressum || 'Impressum'}
               </button>
               <button
-                onClick={() => !isEditing && setCurrentPage('legal')}
+                onClick={() => !isEditing && setCurrentPage('data-protection')}
                 className="text-gray-400 hover:text-gray-700 transition-colors"
               >
                 {t.footer?.privacy || 'Datenschutz'}
