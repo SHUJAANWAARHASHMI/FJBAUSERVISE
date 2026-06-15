@@ -7,7 +7,7 @@ import {
   CheckCircle2, AlertCircle, Eye, EyeOff, GripVertical, Upload,
   FileText, Star, Phone, MapPin, Search, BarChart2, Palette,
   RefreshCw, Download, Shield, Users, Home, Award, Copy, Check,
-  ExternalLink, Info, Layers, Zap, MousePointer2
+  ExternalLink, Info, Layers, Zap, MousePointer2, Scale, Lock
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
@@ -15,8 +15,11 @@ import {
   insertRow, updateRow, deleteRow,
   fetchMediaFiles, deleteMediaFile,
   uploadImage as cmsUploadImage,
+  saveLegalPage, fetchAllLegalPages,
   type MediaFile,
+  type LegalPageRecord,
 } from '../lib/cmsUtils';
+import RichTextEditor from './RichTextEditor';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface AdminPanelProps {
@@ -31,7 +34,7 @@ interface AdminPanelProps {
   onOpenSiteEditor?: () => void;
 }
 
-type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'inquiries' | 'media' | 'data';
+type TabId = 'dashboard' | 'hero' | 'services' | 'projects' | 'faqs' | 'testimonials' | 'contact' | 'inquiries' | 'media' | 'legal' | 'data';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface Toast { id: string; type: 'success' | 'error' | 'info'; message: string; }
@@ -254,6 +257,12 @@ export default function AdminPanel({
   const [editingFaq, setEditingFaq] = useState<any>(null);
   const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
 
+  // Legal pages state
+  const [legalPages, setLegalPages] = useState<Record<string, LegalPageRecord>>({});
+  const [activeLegalSlug, setActiveLegalSlug] = useState<'imprint' | 'data-protection'>('imprint');
+  const [legalSaveState, setLegalSaveState] = useState<SaveState>('idle');
+  const [legalLoading, setLegalLoading] = useState(false);
+
   // Stats for dashboard
   const [stats, setStats] = useState({ projects: 0, services: 0, faqs: 0, testimonials: 0, inquiries: 0 });
 
@@ -292,6 +301,23 @@ export default function AdminPanel({
   useEffect(() => {
     if (activeTab === 'inquiries') fetchInquiries();
   }, [activeTab, fetchInquiries]);
+
+  // Load legal pages on tab open
+  useEffect(() => {
+    if (activeTab !== 'legal') return;
+    setLegalLoading(true);
+    fetchAllLegalPages().then(pages => {
+      const map: Record<string, LegalPageRecord> = {};
+      pages.forEach(p => { map[p.slug] = p; });
+      // Ensure both slugs always have an entry
+      if (!map['imprint'])
+        map['imprint'] = { slug: 'imprint', title: 'Impressum', content: '', seo_title: 'Impressum | FJ BAUSERVICE', seo_description: 'Impressum von FJ BAUSERVICE' };
+      if (!map['data-protection'])
+        map['data-protection'] = { slug: 'data-protection', title: 'Datenschutzerklärung', content: '', seo_title: 'Datenschutzerklärung | FJ BAUSERVICE', seo_description: 'Datenschutzerklärung von FJ BAUSERVICE gemäß DSGVO' };
+      setLegalPages(map);
+      setLegalLoading(false);
+    });
+  }, [activeTab]);
 
   // Load stats
   useEffect(() => {
@@ -657,6 +683,7 @@ export default function AdminPanel({
     { id: 'contact',      label: 'Contact & SEO', icon: <Globe size={16} /> },
     { id: 'media',        label: 'Media Library', icon: <ImageIcon size={16} /> },
     { id: 'inquiries',    label: 'Inquiries',    icon: <Mail size={16} /> },
+    { id: 'legal',        label: 'Rechtliches',  icon: <Scale size={16} /> },
     { id: 'data',         label: 'Backup & Data', icon: <Database size={16} /> },
   ] as const;
 
@@ -1796,6 +1823,186 @@ export default function AdminPanel({
                   </div>
                 )}
 
+                {/* ──────── RECHTLICHES (LEGAL PAGES) ──────── */}
+                {activeTab === 'legal' && (
+                  <div className="space-y-8">
+                    <SectionHeader
+                      icon={<Scale size={20} />}
+                      title="Rechtliches"
+                      subtitle="Impressum und Datenschutzerklärung direkt im CMS bearbeiten und sofort veröffentlichen."
+                    />
+
+                    {/* DB Setup Notice */}
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-sm space-y-3">
+                      <div className="flex gap-3">
+                        <Lock size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                        <div className="text-xs text-amber-300 leading-relaxed">
+                          <strong>Einmalige Einrichtung erforderlich:</strong> Kopiere den SQL-Code unten und führe ihn einmalig im{' '}
+                          <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-200">
+                            Supabase SQL Editor
+                          </a>{' '}
+                          aus. Danach kannst du Impressum &amp; Datenschutz direkt hier bearbeiten.
+                        </div>
+                      </div>
+                      <LegalMigrationSqlBox />
+                    </div>
+
+                    {/* Sub-tabs */}
+                    <div className="flex gap-2 border-b border-[#1a1a1a] pb-0">
+                      {(['imprint', 'data-protection'] as const).map(slug => (
+                        <button
+                          key={slug}
+                          onClick={() => setActiveLegalSlug(slug)}
+                          className={`px-5 py-3 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] ${
+                            activeLegalSlug === slug
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {slug === 'imprint' ? 'Impressum' : 'Datenschutz'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {legalLoading ? (
+                      <div className="flex items-center gap-3 py-12 justify-center text-zinc-500">
+                        <Loader2 size={20} className="animate-spin text-primary" />
+                        <span className="text-sm">Lade Seiteninhalte…</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Page Title */}
+                        <Field label="Seitentitel" required hint="Wird als H1 und Browser-Tab-Titel verwendet.">
+                          <input
+                            className={inputCls}
+                            value={legalPages[activeLegalSlug]?.title ?? ''}
+                            onChange={e => setLegalPages(prev => ({
+                              ...prev,
+                              [activeLegalSlug]: { ...prev[activeLegalSlug], title: e.target.value }
+                            }))}
+                            placeholder={activeLegalSlug === 'imprint' ? 'Impressum' : 'Datenschutzerklärung'}
+                          />
+                        </Field>
+
+                        {/* SEO Fields */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <Field label="SEO Titel" hint="Für Google-Suchergebnisse (max. 60 Zeichen)">
+                            <input
+                              className={inputCls}
+                              value={legalPages[activeLegalSlug]?.seo_title ?? ''}
+                              onChange={e => setLegalPages(prev => ({
+                                ...prev,
+                                [activeLegalSlug]: { ...prev[activeLegalSlug], seo_title: e.target.value }
+                              }))}
+                              placeholder={activeLegalSlug === 'imprint' ? 'Impressum | FJ BAUSERVICE' : 'Datenschutzerklärung | FJ BAUSERVICE'}
+                              maxLength={70}
+                            />
+                          </Field>
+                          <Field label="SEO Beschreibung" hint="Meta-Beschreibung (max. 160 Zeichen)">
+                            <input
+                              className={inputCls}
+                              value={legalPages[activeLegalSlug]?.seo_description ?? ''}
+                              onChange={e => setLegalPages(prev => ({
+                                ...prev,
+                                [activeLegalSlug]: { ...prev[activeLegalSlug], seo_description: e.target.value }
+                              }))}
+                              placeholder="Kurze Beschreibung für Suchmaschinen…"
+                              maxLength={170}
+                            />
+                          </Field>
+                        </div>
+
+                        {/* Rich Text Editor */}
+                        <Field
+                          label="Seiteninhalt"
+                          required
+                          hint="Formatiere den Text mit der Toolbar. Änderungen werden erst nach Klick auf 'Speichern' veröffentlicht."
+                        >
+                          <RichTextEditor
+                            value={legalPages[activeLegalSlug]?.content ?? ''}
+                            onChange={html => setLegalPages(prev => ({
+                              ...prev,
+                              [activeLegalSlug]: { ...prev[activeLegalSlug], content: html }
+                            }))}
+                            placeholder={activeLegalSlug === 'imprint'
+                              ? 'Gib hier den vollständigen Impressums-Text ein…'
+                              : 'Gib hier den vollständigen Datenschutzerklärung-Text ein…'
+                            }
+                            minHeight={400}
+                          />
+                        </Field>
+
+                        {/* Save Button */}
+                        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-black/80 to-transparent">
+                          <button
+                            type="button"
+                            disabled={legalSaveState === 'saving'}
+                            onClick={async () => {
+                              const page = legalPages[activeLegalSlug];
+                              if (!page) return;
+                              if (!page.title.trim()) {
+                                addToast('error', 'Bitte einen Seitentitel eingeben.');
+                                return;
+                              }
+                              setLegalSaveState('saving');
+                              const result = await saveLegalPage(page);
+                              if (result.ok) {
+                                // Update local state with returned id/updated_at
+                                if (result.data) {
+                                  setLegalPages(prev => ({
+                                    ...prev,
+                                    [activeLegalSlug]: { ...prev[activeLegalSlug], ...result.data }
+                                  }));
+                                }
+                                setLegalSaveState('saved');
+                                addToast('success', `${page.title} erfolgreich gespeichert und sofort veröffentlicht!`);
+                                setTimeout(() => setLegalSaveState('idle'), 3000);
+                              } else {
+                                setLegalSaveState('error');
+                                addToast('error', `Fehler beim Speichern: ${result.error ?? 'Unbekannter Fehler'}`);
+                                setTimeout(() => setLegalSaveState('idle'), 5000);
+                              }
+                            }}
+                            className={`w-full flex items-center justify-center gap-3 py-5 font-black text-base uppercase tracking-widest transition-all rounded-sm border ${
+                              legalSaveState === 'saved'
+                                ? 'bg-green-600 border-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.4)]'
+                                : legalSaveState === 'error'
+                                ? 'bg-red-600/80 border-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.4)]'
+                                : legalSaveState === 'saving'
+                                ? 'bg-primary/60 border-primary/40 text-black/60 cursor-not-allowed'
+                                : 'bg-primary border-primary text-black hover:bg-primary/90 shadow-[0_0_40px_rgba(255,117,31,0.3)]'
+                            }`}
+                          >
+                            {legalSaveState === 'saving' ? (
+                              <><Loader2 size={20} className="animate-spin" /> Speichert in Datenbank…</>
+                            ) : legalSaveState === 'saved' ? (
+                              <><CheckCircle2 size={20} /> Gespeichert &amp; Veröffentlicht!</>
+                            ) : legalSaveState === 'error' ? (
+                              <><AlertCircle size={20} /> Fehler — Erneut versuchen</>
+                            ) : (
+                              <><Save size={20} /> {activeLegalSlug === 'imprint' ? 'Impressum' : 'Datenschutz'} Speichern</>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Preview Link */}
+                        <div className="flex items-center gap-2 text-xs text-zinc-600">
+                          <Eye size={12} />
+                          <span>Vorschau:</span>
+                          <a
+                            href={activeLegalSlug === 'imprint' ? '/#imprint' : '/#data-protection'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {activeLegalSlug === 'imprint' ? '/impressum' : '/datenschutz'} öffnen →
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ──────── DATA & BACKUP ──────── */}
                 {activeTab === 'data' && (
                   <div className="space-y-10">
@@ -2183,7 +2390,37 @@ CREATE POLICY "Allow public all" ON site_settings FOR ALL USING (true);
 INSERT INTO site_settings (id, name, slogan) VALUES (1, 'FJ BAUSERVICE', 'Raum für Neues schaffen')
 ON CONFLICT (id) DO NOTHING;
 
--- 8. STORAGE BUCKET POLICIES (run if needed)
+-- 8. LEGAL PAGES TABLE
+CREATE TABLE IF NOT EXISTS legal_pages (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug            VARCHAR(100) UNIQUE NOT NULL,
+  title           VARCHAR(255) NOT NULL,
+  content         TEXT NOT NULL DEFAULT '',
+  seo_title       VARCHAR(255),
+  seo_description TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE OR REPLACE FUNCTION update_legal_pages_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS set_legal_pages_updated_at ON legal_pages;
+CREATE TRIGGER set_legal_pages_updated_at
+  BEFORE UPDATE ON legal_pages
+  FOR EACH ROW EXECUTE FUNCTION update_legal_pages_updated_at();
+ALTER TABLE legal_pages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read legal_pages" ON legal_pages;
+CREATE POLICY "Public read legal_pages" ON legal_pages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin all legal_pages" ON legal_pages;
+CREATE POLICY "Admin all legal_pages" ON legal_pages FOR ALL USING (true) WITH CHECK (true);
+INSERT INTO legal_pages (slug, title, content, seo_title, seo_description)
+VALUES
+  ('imprint', 'Impressum', '', 'Impressum | FJ BAUSERVICE', 'Impressum von FJ BAUSERVICE'),
+  ('data-protection', 'Datenschutzerklärung', '', 'Datenschutzerklärung | FJ BAUSERVICE', 'Datenschutzerklärung von FJ BAUSERVICE gemäß DSGVO')
+ON CONFLICT (slug) DO NOTHING;
+
+-- 9. STORAGE BUCKET POLICIES (run if needed)
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('images', 'images', true) ON CONFLICT DO NOTHING;
 -- CREATE POLICY "Public upload" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'images');
 -- CREATE POLICY "Public view" ON storage.objects FOR SELECT TO public USING (bucket_id = 'images');
@@ -2207,6 +2444,62 @@ ON CONFLICT (id) DO NOTHING;
         {copied ? <><Check size={12} className="text-green-400" /> Copied!</> : <><Copy size={12} /> Copy SQL</>}
       </button>
       <pre className="text-[9px] bg-[#050505] border border-[#1a1a1a] p-4 pt-10 overflow-x-auto text-zinc-500 font-mono leading-relaxed rounded-sm select-all max-h-64 overflow-y-auto scrollbar-thin">
+        {sql}
+      </pre>
+    </div>
+  );
+}
+
+// ─── Legal Migration SQL Box ──────────────────────────────────────────────────
+function LegalMigrationSqlBox() {
+  const [copied, setCopied] = useState(false);
+  const sql = `-- LEGAL PAGES TABLE — run once in Supabase SQL Editor
+CREATE TABLE IF NOT EXISTS legal_pages (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug            VARCHAR(100) UNIQUE NOT NULL,
+  title           VARCHAR(255) NOT NULL,
+  content         TEXT NOT NULL DEFAULT '',
+  seo_title       VARCHAR(255),
+  seo_description TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE OR REPLACE FUNCTION update_legal_pages_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS set_legal_pages_updated_at ON legal_pages;
+CREATE TRIGGER set_legal_pages_updated_at
+  BEFORE UPDATE ON legal_pages
+  FOR EACH ROW EXECUTE FUNCTION update_legal_pages_updated_at();
+ALTER TABLE legal_pages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read legal_pages" ON legal_pages;
+CREATE POLICY "Public read legal_pages" ON legal_pages
+  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin all legal_pages" ON legal_pages;
+CREATE POLICY "Admin all legal_pages" ON legal_pages
+  FOR ALL USING (true) WITH CHECK (true);
+INSERT INTO legal_pages (slug, title, content, seo_title, seo_description)
+VALUES
+  ('imprint', 'Impressum', '', 'Impressum | FJ BAUSERVICE', 'Impressum von FJ BAUSERVICE'),
+  ('data-protection', 'Datenschutzerklärung', '', 'Datenschutzerklärung | FJ BAUSERVICE', 'Datenschutzerklärung gemäß DSGVO')
+ON CONFLICT (slug) DO NOTHING;`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(sql);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleCopy}
+        className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-400 hover:text-amber-300 border border-amber-800/50 hover:border-amber-500/50 px-3 py-1.5 rounded-sm transition-colors bg-[#0a0a0a]"
+      >
+        {copied ? <><Check size={12} className="text-green-400" /> Kopiert!</> : <><Copy size={12} /> SQL Kopieren</>}
+      </button>
+      <pre className="text-[10px] bg-[#050505] border border-amber-900/30 p-4 pt-10 overflow-x-auto text-amber-300/70 font-mono leading-relaxed rounded-sm select-all max-h-56 overflow-y-auto scrollbar-thin">
         {sql}
       </pre>
     </div>

@@ -18,6 +18,7 @@ import Login from './components/Login';
 import SEO from './components/SEO';
 import FAQ from './components/FAQ';
 import SiteEditor from './components/SiteEditor';
+import LegalPage from './components/LegalPage';
 import { supabase } from './lib/supabase';
 import { fetchLatestSettings } from './lib/cmsUtils';
 import { translations } from './lib/translations';
@@ -326,48 +327,21 @@ export default function App() {
             <Contact settings={siteSettings} lang={language} />
           </>
         );
+      case 'imprint':
+        return <LegalPage slug="imprint" setCurrentPage={setCurrentPage} />;
+      case 'data-protection':
+        return <LegalPage slug="data-protection" setCurrentPage={setCurrentPage} />;
       case 'legal':
-        return (
-          <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto space-y-12">
-            <SEO title="Impressum & Datenschutz | FJ BAUSERVICE" description="Rechtliche Informationen." />
-            <h1 className="heading-dynamic text-6xl">Rechtliches</h1>
-            <div className="prose max-w-none space-y-8 text-text-muted">
-              <div>
-                <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.impressum}</h2>
-                <div className="mt-4 p-6 bg-surface-card border border-surface-border whitespace-pre-wrap leading-relaxed">
-                  {siteSettings?.name || 'FJ Bauservice'}{'\n'}
-                  {siteSettings?.address_de || siteSettings?.address || 'Bahnhofstraße 9, 83022 Rosenheim'}{'\n'}
-                  Vertreten durch: Amjad Ali{'\n'}
-                  Kontakt: {siteSettings?.email || 'amjad.ali@fj-bauservice.com'}
-                </div>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-text-main uppercase">{t.footer.privacy}</h2>
-                <p>Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO).</p>
-              </div>
-            </div>
-          </section>
-        );
+        // Legacy route — redirect to imprint
+        return <LegalPage slug="imprint" setCurrentPage={setCurrentPage} />;
       default:
         return <Hero settings={siteSettings} lang={language} setCurrentPage={setCurrentPage} />;
     }
   };
 
-  // ── Dynamic Favicon from logo_url ─────────────────────────────────────────
-  useEffect(() => {
-    const logoUrl = siteSettings?.logo_url;
-    if (!logoUrl) return;
-    // Update all favicon link tags to point at the logo stored in Supabase
-    const selectors = [
-      'link[rel="icon"]',
-      'link[rel="shortcut icon"]',
-      'link[rel="apple-touch-icon"]',
-    ];
-    selectors.forEach(sel => {
-      const el = document.querySelector(sel) as HTMLLinkElement | null;
-      if (el) { el.href = logoUrl; }
-    });
-  }, [siteSettings?.logo_url]);
+  // ── Favicon is the static wrecking-ball icon in /public/favicon.png ─────────
+  // The logo_url from DB is used as the navbar/footer logo, NOT as the favicon.
+  // Favicon files are baked into /public at build time (favicon.ico, favicon-*.png).
 
   // No hard loading gate — render the shell immediately, content fills in
   // (isLoading is still tracked so child components can show skeletons if needed)

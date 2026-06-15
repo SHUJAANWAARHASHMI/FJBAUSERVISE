@@ -445,3 +445,88 @@ export async function fetchLatestSettings(): Promise<any | null> {
     return null;
   }
 }
+
+// ─── Legal Pages ──────────────────────────────────────────────────────────────
+
+export interface LegalPageRecord {
+  id?: string;
+  slug: string;
+  title: string;
+  content: string;
+  seo_title?: string;
+  seo_description?: string;
+  updated_at?: string;
+}
+
+/**
+ * Fetch a single legal page by slug.
+ * Returns null if the table doesn't exist yet or the row isn't found.
+ */
+export async function fetchLegalPage(slug: string): Promise<LegalPageRecord | null> {
+  try {
+    const { data, error } = await supabase
+      .from('legal_pages')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error) {
+      if (error.code !== 'PGRST116') {
+        console.warn('[CMS] fetchLegalPage — error:', error.message);
+      }
+      return null;
+    }
+    return data as LegalPageRecord;
+  } catch (err: any) {
+    console.error('[CMS] fetchLegalPage — FAILED:', err?.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch all legal pages.
+ */
+export async function fetchAllLegalPages(): Promise<LegalPageRecord[]> {
+  try {
+    const { data, error } = await supabase
+      .from('legal_pages')
+      .select('*')
+      .order('slug', { ascending: true });
+    if (error) {
+      console.warn('[CMS] fetchAllLegalPages — error:', error.message);
+      return [];
+    }
+    return (data as LegalPageRecord[]) || [];
+  } catch (err: any) {
+    console.error('[CMS] fetchAllLegalPages — FAILED:', err?.message);
+    return [];
+  }
+}
+
+/**
+ * Save (upsert by slug) a legal page.
+ * Creates the row if it doesn't exist, updates if it does.
+ */
+export async function saveLegalPage(page: LegalPageRecord): Promise<SaveResult> {
+  const { id: _id, updated_at, ...payload } = page as any;
+  console.log(`[CMS] saveLegalPage — slug="${page.slug}"`);
+  try {
+    const data = await withRetry(async () => {
+      const { data, error } = await supabase
+        .from('legal_pages')
+        .upsert(payload, { onConflict: 'slug' })
+        .select()
+        .single();
+      if (error) {
+        console.error('[CMS] saveLegalPage — Supabase error:', error.code, error.message);
+        throw error;
+      }
+      return data;
+    }, `saveLegalPage(${page.slug})`);
+    console.log(`[CMS] saveLegalPage — SUCCESS slug="${page.slug}" id=${data?.id}`);
+    return { ok: true, data };
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    console.error(`[CMS] saveLegalPage — FAILED:`, msg);
+    return { ok: false, error: msg };
+  }
+}
