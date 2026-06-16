@@ -58,8 +58,20 @@ export const SITE_SETTINGS_COLUMNS = new Set([
   'hours_weekdays', 'hours_saturday', 'hours_sunday',
   'whatsapp_number', 'google_maps_url',
   'contact_image_url',
-  // About section
+  // About page
   'about_image_url',
+  'about_hero_kicker', 'about_hero_heading', 'about_hero_heading_highlight',
+  'about_quote', 'about_intro',
+  'about_mission', 'about_vision',
+  'about_history',
+  'about_stat1_value', 'about_stat1_label',
+  'about_stat2_value', 'about_stat2_label',
+  'about_stat3_value', 'about_stat3_label',
+  'about_team_heading', 'about_team_content',
+  'about_cert_heading', 'about_cert_content',
+  'about_cta_text', 'about_cta_button',
+  'about_seo_title', 'about_seo_description',
+  'about_image2_url',
   // Footer
   'footer_copyright', 'footer_image_url',
   // Social
