@@ -19,6 +19,7 @@ import SEO from './components/SEO';
 import FAQ from './components/FAQ';
 import SiteEditor from './components/SiteEditor';
 import LegalPage from './components/LegalPage';
+import AboutUs from './components/AboutUs';
 import { supabase } from './lib/supabase';
 import { fetchLatestSettings } from './lib/cmsUtils';
 import { translations } from './lib/translations';
@@ -238,57 +239,10 @@ export default function App() {
         return (
           <>
             <SEO
-              title="Über Uns | FJ BAUSERVICE Rosenheim"
-              description="Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb für Rückbau und Sanierungsvorbereitung."
+              title={siteSettings?.about_seo_title || 'Über Uns | FJ BAUSERVICE Rosenheim'}
+              description={siteSettings?.about_seo_description || 'Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb für Rückbau und Sanierungsvorbereitung in München & Rosenheim.'}
             />
-            <section className="pt-40 pb-32 px-6 max-w-7xl mx-auto space-y-24">
-              <div className="space-y-8 max-w-4xl">
-                <span className="text-primary font-bold tracking-[0.4em] uppercase text-[10px] md:text-xs">Unsere Geschichte</span>
-                <h1 className="heading-dynamic text-5xl sm:text-7xl md:text-[150px] italic leading-[0.9] md:leading-[0.8] text-text-main">
-                  Präzision im<br /><span className="text-primary not-italic font-black">Rückbau.</span>
-                </h1>
-              </div>
-              <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
-                <div className="space-y-10 text-text-muted text-lg md:text-xl font-medium leading-relaxed">
-                  <p className="text-text-main text-2xl md:text-3xl font-black italic border-l-4 border-primary pl-8 py-2">
-                    "Wir schaffen seit über {siteSettings?.stats_years || '15'} Jahren Raum für Neues in Bayern."
-                  </p>
-                  <p>
-                    {siteSettings?.description_de || siteSettings?.description || `${siteSettings?.name || 'FJ Bauservice'} ist Ihr inhabergeführtes Abbruchunternehmen in München & Rosenheim.`}
-                  </p>
-                  <div className="pt-8 flex flex-wrap gap-12 border-t border-surface-border">
-                    <div>
-                      <span className="block text-4xl font-black text-primary italic leading-none">{siteSettings?.stats_years || '15+'}</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Jahre Erfahrung</span>
-                    </div>
-                    <div>
-                      <span className="block text-4xl font-black text-primary italic leading-none">{siteSettings?.stats_projects || '500+'}</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Projekte</span>
-                    </div>
-                    <div>
-                      <span className="block text-4xl font-black text-primary italic leading-none">100%</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-2 block">Termintreue</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="relative group">
-                  <div className="aspect-[3/4] bg-surface-card border border-surface-border overflow-hidden shadow-2xl relative z-10">
-                    <img
-                      src={siteSettings?.about_image_url || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"}
-                      alt="FJ BAUSERVICE Fachbetrieb"
-                      className="w-full h-full object-cover opacity-60 filter grayscale brightness-75 group-hover:scale-110 transition-transform duration-1000"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-20 -z-10" />
-                </div>
-              </div>
-              <div className="pt-12 text-center md:text-left">
-                <button onClick={() => setCurrentPage('contact')} className="button-primary px-16 py-8">
-                  Unverbindliches Angebot einholen
-                </button>
-              </div>
-            </section>
+            <AboutUs settings={siteSettings} setCurrentPage={setCurrentPage} />
           </>
         );
       case 'services':
