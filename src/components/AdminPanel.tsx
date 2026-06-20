@@ -1150,7 +1150,7 @@ export default function AdminPanel({
                     <SectionHeader
                       icon={<Users size={20} />}
                       title="Über Uns Seite"
-                      subtitle="Bearbeite alle Inhalte der Über-Uns-Seite: Hero, Mission, Vision, Geschichte, Team, Zertifizierungen und mehr."
+                      subtitle="Bearbeite Hero, Einleitungstext, Statistiken, Bild und SEO der Über-Uns-Seite."
                     />
 
                     {/* DB Setup Notice */}
@@ -1172,7 +1172,7 @@ export default function AdminPanel({
                     <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🦸 Hero-Bereich</h4>
                       <div className="grid md:grid-cols-3 gap-4">
-                        <Field label="Kicker (Kleintext über Überschrift)" hint="z.B. 'Unsere Geschichte'">
+                        <Field label="Kicker (Kleintext oben)" hint="z.B. 'Unsere Geschichte'">
                           <input className={inputCls} value={settingsForm.about_hero_kicker || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_hero_kicker: e.target.value }))} placeholder="Unsere Geschichte" />
                         </Field>
                         <Field label="Hauptüberschrift" hint="z.B. 'Präzision im'">
@@ -1184,13 +1184,13 @@ export default function AdminPanel({
                       </div>
                     </div>
 
-                    {/* ── INTRO QUOTE + TEXT ── */}
+                    {/* ── INTRO ── */}
                     <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📝 Einleitung</h4>
-                      <Field label="Zitat (fett mit orangem Rand)" hint="Das große blockquote unter dem Hero">
-                        <input className={inputCls} value={settingsForm.about_quote || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_quote: e.target.value }))} placeholder='"Wir schaffen seit über 15 Jahren Raum für Neues in Bayern."' />
+                      <Field label="Zitat (großes Blockquote mit orangem Rand)">
+                        <input className={inputCls} value={settingsForm.about_quote || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_quote: e.target.value }))} placeholder='"Wir schaffen seit über 5 Jahren Raum für Neues in Bayern."' />
                       </Field>
-                      <Field label="Einleitungstext" hint="Firmenvorstellung. Supports rich text (HTML) und Klartext.">
+                      <Field label="Einleitungstext" hint="Firmenvorstellung — unterstützt Rich-Text (HTML) und Klartext">
                         <RichTextEditor
                           value={settingsForm.about_intro || ''}
                           onChange={html => setSettingsForm((p: any) => ({ ...p, about_intro: html }))}
@@ -1204,160 +1204,47 @@ export default function AdminPanel({
                     <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📊 Statistiken (3 Blöcke)</h4>
                       <div className="grid md:grid-cols-3 gap-6">
-                        {[1, 2, 3].map(i => (
+                        {([
+                          { i: 1, defV: '5+',   defL: 'Jahre Erfahrung' },
+                          { i: 2, defV: '100+',  defL: 'Projekte'        },
+                          { i: 3, defV: '100%',  defL: 'Termintreue'     },
+                        ] as const).map(({ i, defV, defL }) => (
                           <div key={i} className="space-y-3 p-4 border border-[#222] rounded-sm">
                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Statistik {i}</p>
                             <Field label="Wert">
-                              <input className={inputCls} value={settingsForm[`about_stat${i}_value`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`about_stat${i}_value`]: e.target.value }))} placeholder={i === 1 ? '15+' : i === 2 ? '500+' : '100%'} />
+                              <input className={inputCls} value={settingsForm[`about_stat${i}_value`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`about_stat${i}_value`]: e.target.value }))} placeholder={defV} />
                             </Field>
                             <Field label="Bezeichnung">
-                              <input className={inputCls} value={settingsForm[`about_stat${i}_label`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`about_stat${i}_label`]: e.target.value }))} placeholder={i === 1 ? 'Jahre Erfahrung' : i === 2 ? 'Projekte' : 'Termintreue'} />
+                              <input className={inputCls} value={settingsForm[`about_stat${i}_label`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`about_stat${i}_label`]: e.target.value }))} placeholder={defL} />
                             </Field>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* ── MISSION / VISION ── */}
+                    {/* ── IMAGE ── */}
                     <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🎯 Mission & Vision</h4>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <Field label="Mission" hint="Unterstützt HTML-Formatierung">
-                          <RichTextEditor
-                            value={settingsForm.about_mission || ''}
-                            onChange={html => setSettingsForm((p: any) => ({ ...p, about_mission: html }))}
-                            placeholder="Unsere Mission ist es..."
-                            minHeight={150}
-                          />
-                        </Field>
-                        <Field label="Vision" hint="Unterstützt HTML-Formatierung">
-                          <RichTextEditor
-                            value={settingsForm.about_vision || ''}
-                            onChange={html => setSettingsForm((p: any) => ({ ...p, about_vision: html }))}
-                            placeholder="Unsere Vision ist..."
-                            minHeight={150}
-                          />
-                        </Field>
-                      </div>
-                    </div>
-
-                    {/* ── IMAGES ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🖼️ Bilder</h4>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <ImageUploadField
-                          label="Hauptbild (Portraitformat 3:4)"
-                          fieldKey="about_image_url"
-                          value={settingsForm.about_image_url || ''}
-                          isUploading={isUploading}
-                          onUpload={uploadAndSetSettings}
-                          onChange={url => setSettingsForm((p: any) => ({ ...p, about_image_url: url }))}
-                          hint="Wird neben dem Einleitungstext angezeigt"
-                        />
-                        <ImageUploadField
-                          label="Hintergrundbild (Vollbreite)"
-                          fieldKey="about_image2_url"
-                          value={settingsForm.about_image2_url || ''}
-                          isUploading={isUploading}
-                          onUpload={uploadAndSetSettings}
-                          onChange={url => setSettingsForm((p: any) => ({ ...p, about_image2_url: url }))}
-                          hint="Großes Hintergrundbild zwischen Geschichte und Warum-Wir"
-                        />
-                      </div>
-                    </div>
-
-                    {/* ── HISTORY ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📅 Unternehmensgeschichte</h4>
-                      <Field label="Geschichte / Timeline" hint="Vollständiger Rich-Text. Nutze Absätze, Listen, Fettdruck usw.">
-                        <RichTextEditor
-                          value={settingsForm.about_history || ''}
-                          onChange={html => setSettingsForm((p: any) => ({ ...p, about_history: html }))}
-                          placeholder="Seit der Gründung durch..."
-                          minHeight={200}
-                        />
-                      </Field>
-                    </div>
-
-                    {/* ── WHY CHOOSE US ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🏆 Warum Wir (3 Punkte)</h4>
-                      <p className="text-[11px] text-zinc-500">Diese Felder teilen sich mit dem "Warum Wir"-Abschnitt auf der Startseite.</p>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <Field label="Abschnitts-Überschrift">
-                          <input className={inputCls} value={settingsForm.whyus_title || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, whyus_title: e.target.value }))} placeholder="Warum FJ BAUSERVICE?" />
-                        </Field>
-                        <Field label="Abschnitts-Untertitel">
-                          <input className={inputCls} value={settingsForm.whyus_subtitle || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, whyus_subtitle: e.target.value }))} placeholder="Präzision, Termintreue und Transparenz..." />
-                        </Field>
-                      </div>
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="grid md:grid-cols-2 gap-4 p-4 border border-[#222] rounded-sm">
-                          <p className="md:col-span-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">Punkt {i}</p>
-                          <Field label="Titel">
-                            <input className={inputCls} value={settingsForm[`whyus_${i}_title`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`whyus_${i}_title`]: e.target.value }))} placeholder={['Regionale Expertise', 'Moderne Technik', 'Zertifizierte Sicherheit'][i - 1]} />
-                          </Field>
-                          <Field label="Beschreibung">
-                            <input className={inputCls} value={settingsForm[`whyus_${i}_desc`] || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, [`whyus_${i}_desc`]: e.target.value }))} placeholder={['Tief verwurzelt in München...', 'Modernste Equipment...', 'Höchste Sicherheitsstandards...'][i - 1]} />
-                          </Field>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* ── TEAM ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">👥 Team</h4>
-                      <Field label="Team-Abschnitts-Überschrift">
-                        <input className={inputCls} value={settingsForm.about_team_heading || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_team_heading: e.target.value }))} placeholder="Unser Team" />
-                      </Field>
-                      <Field label="Team-Inhalt" hint="Beschreibe dein Team. Unterstützt HTML-Formatierung.">
-                        <RichTextEditor
-                          value={settingsForm.about_team_content || ''}
-                          onChange={html => setSettingsForm((p: any) => ({ ...p, about_team_content: html }))}
-                          placeholder="Hinter FJ BAUSERVICE steht ein erfahrenes Team..."
-                          minHeight={150}
-                        />
-                      </Field>
-                    </div>
-
-                    {/* ── CERTIFICATIONS ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🏅 Zertifizierungen & Auszeichnungen</h4>
-                      <Field label="Überschrift">
-                        <input className={inputCls} value={settingsForm.about_cert_heading || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_cert_heading: e.target.value }))} placeholder="Zertifizierungen & Auszeichnungen" />
-                      </Field>
-                      <Field label="Inhalt" hint="Nutze Listen (UL/OL) für Zertifikate. Unterstützt HTML.">
-                        <RichTextEditor
-                          value={settingsForm.about_cert_content || ''}
-                          onChange={html => setSettingsForm((p: any) => ({ ...p, about_cert_content: html }))}
-                          placeholder="Zertifizierter Abbruchbetrieb nach TRGS 519..."
-                          minHeight={150}
-                        />
-                      </Field>
-                    </div>
-
-                    {/* ── CTA ── */}
-                    <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">📣 Call-to-Action</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <Field label="CTA Button-Text" hint="z.B. 'Unverbindliches Angebot einholen'">
-                          <input className={inputCls} value={settingsForm.about_cta_text || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_cta_text: e.target.value }))} placeholder="Unverbindliches Angebot einholen" />
-                        </Field>
-                        <Field label="CTA Button-Ziel" hint="Seitenname z.B. 'contact', oder externer Link">
-                          <input className={inputCls} value={settingsForm.about_cta_button || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_cta_button: e.target.value }))} placeholder="contact" />
-                        </Field>
-                      </div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🖼️ Seitenbild</h4>
+                      <ImageUploadField
+                        label="Hauptbild (Portraitformat 3:4 — rechte Seite)"
+                        fieldKey="about_image_url"
+                        value={settingsForm.about_image_url || ''}
+                        isUploading={isUploading}
+                        onUpload={uploadAndSetSettings}
+                        onChange={url => setSettingsForm((p: any) => ({ ...p, about_image_url: url }))}
+                        hint="Wird neben dem Einleitungstext und den Statistiken angezeigt"
+                      />
                     </div>
 
                     {/* ── SEO ── */}
                     <div className="p-6 bg-[#0d0d0d] border border-[#1a1a1a] rounded-sm space-y-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">🔍 SEO (Über Uns Seite)</h4>
                       <div className="grid md:grid-cols-2 gap-4">
-                        <Field label="SEO-Titel" hint="Wird als Browser-Tab-Titel und in Google angezeigt (max. 60 Zeichen)">
+                        <Field label="SEO-Titel" hint="Browser-Tab + Google (max. 60 Zeichen)">
                           <input className={inputCls} maxLength={70} value={settingsForm.about_seo_title || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_seo_title: e.target.value }))} placeholder="Über Uns | FJ BAUSERVICE Rosenheim" />
                         </Field>
                         <Field label="SEO-Beschreibung" hint="Meta-Beschreibung für Suchmaschinen (max. 160 Zeichen)">
-                          <input className={inputCls} maxLength={170} value={settingsForm.about_seo_description || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_seo_description: e.target.value }))} placeholder="Erfahren Sie mehr über FJ BAUSERVICE, Ihren Fachbetrieb..." />
+                          <input className={inputCls} maxLength={170} value={settingsForm.about_seo_description || ''} onChange={e => setSettingsForm((p: any) => ({ ...p, about_seo_description: e.target.value }))} placeholder="Erfahren Sie mehr über FJ BAUSERVICE..." />
                         </Field>
                       </div>
                     </div>
