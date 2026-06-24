@@ -20,6 +20,7 @@ import FAQ from './components/FAQ';
 import SiteEditor from './components/SiteEditor';
 import LegalPage from './components/LegalPage';
 import AboutUs from './components/AboutUs';
+import CookieConsent from './components/CookieConsent';
 import { supabase } from './lib/supabase';
 import { fetchLatestSettings } from './lib/cmsUtils';
 import { translations } from './lib/translations';
@@ -392,6 +393,9 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* GDPR Cookie Consent — isolated overlay, zero side-effects */}
+      <CookieConsent setCurrentPage={setCurrentPage} />
     </div>
   );
 }
