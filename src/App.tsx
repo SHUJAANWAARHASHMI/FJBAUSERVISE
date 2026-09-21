@@ -132,8 +132,34 @@ export interface Testimonial {
   avatar_url?: string;
 }
 
+// ── URL-page slug map (for shareable direct links) ───────────────────────────
+const URL_TO_PAGE: Record<string, string> = {
+  'datenschutz':          'data-protection',
+  'datenschutzerklaerung':'data-protection',
+  'data-protection':      'data-protection',
+  'impressum':            'imprint',
+  'imprint':              'imprint',
+};
+const PAGE_TO_URL: Record<string, string> = {
+  'data-protection': 'datenschutz',
+  'imprint':         'impressum',
+};
+
+function getInitialPage(): string {
+  // Check ?page= query param  (e.g. ?page=data-protection)
+  const params = new URLSearchParams(window.location.search);
+  const qPage = params.get('page');
+  if (qPage && URL_TO_PAGE[qPage]) return URL_TO_PAGE[qPage];
+
+  // Check URL path  (e.g. /datenschutz  or  /impressum)
+  const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
+  if (path && URL_TO_PAGE[path]) return URL_TO_PAGE[path];
+
+  return 'home';
+}
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState(getInitialPage);
   const language = 'de';
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -201,6 +227,40 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
+
+  // ── Sync URL bar when navigating to/from legal pages ──────────────────────
+  // This makes /datenschutz and /impressum shareable as direct links.
+  useEffect(() => {
+    const friendlySlug = PAGE_TO_URL[currentPage];
+    if (friendlySlug) {
+      // Legal page: push a clean path like /datenschutz
+      const newUrl = `/${friendlySlug}`;
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState({ page: currentPage }, '', newUrl);
+      }
+    } else if (currentPage === 'home') {
+      // Back to home: restore root URL
+      if (window.location.pathname !== '/' && window.location.pathname !== '') {
+        window.history.pushState({ page: 'home' }, '', '/');
+      }
+    }
+  }, [currentPage]);
+
+  // ── Handle browser back/forward button ────────────────────────────────────
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const state = e.state as { page?: string } | null;
+      if (state?.page) {
+        setCurrentPage(state.page);
+      } else {
+        // Fallback: re-read path
+        const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
+        setCurrentPage(URL_TO_PAGE[path] || 'home');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // ── SEO metadata from settings ────────────────────────────────────────────
   const seoTitle = siteSettings?.seo_title_de || "Abbruch, Entkernung & Kernbohrung München";
