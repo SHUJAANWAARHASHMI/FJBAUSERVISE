@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { translations } from '../lib/translations';
 import Logo from './Logo';
 import { EditableSection, useEditorCtx } from '../lib/editorContext';
@@ -97,18 +98,27 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           </div>
         </div>
 
+        {/*
+          Mobile menu is rendered in a portal on <body>, NOT inside <nav>.
+          When the navbar is scrolled it gets `backdrop-blur-md`; a backdrop-filter
+          makes <nav> the containing block for `position: fixed` children, which
+          shrank the white panel to the navbar's height and let page content show
+          through. Outside <nav>, the panel is always fixed to the real viewport.
+        */}
+        {createPortal(
         <AnimatePresence>
           {isMobileMenuOpen && (
             <>
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[45] lg:hidden"
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] lg:hidden"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
               <motion.div
                 initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed top-0 right-0 w-[80%] max-w-sm h-full bg-white border-l border-gray-200 shadow-2xl z-[55] lg:hidden flex flex-col p-8 pt-24 gap-8"
+                style={{ backgroundColor: '#FFFFFF', opacity: 1 }}
+                className="fixed top-0 right-0 bottom-0 w-[80%] max-w-sm bg-white border-l border-gray-200 shadow-2xl z-[65] lg:hidden flex flex-col p-8 pt-24 gap-8 overflow-y-auto overscroll-contain"
               >
                 <div className="flex flex-col gap-4">
                   {navLinks.map(link => (
@@ -134,7 +144,9 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
               </motion.div>
             </>
           )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+        )}
       </nav>
     </EditableSection>
   );
