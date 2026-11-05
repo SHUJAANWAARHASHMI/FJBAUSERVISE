@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowUp, Phone, Mail, MapPin, Clock, Instagram, Facebook, Linkedin, Youtube, ExternalLink } from 'lucide-react';
 import { translations } from '../lib/translations';
 import Logo from './Logo';
+import { useBrandLogo } from '../lib/useBrandLogo';
 import { EditableText, EditableSection, useEditorCtx } from '../lib/editorContext';
 
 interface FooterProps {
@@ -44,8 +45,7 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
     else { setClickCount(newCount); setTimeout(() => setClickCount(0), 3000); }
   };
 
-  const logoScale    = parseFloat(s?.logo_scale || '1') || 1;
-  const customLogo   = s?.logo_url || '';
+  const brand        = useBrandLogo(s);
   const companyName  = s?.name || 'FJ BAUSERVICE';
   const description  = s?.description_de || s?.description || 'Ihr Partner für Abbruch, Entkernung und Sanierung in München und Rosenheim. Wir schaffen seit über 15 Jahren Raum für Neues – professionell, sicher und fachgerecht.';
   const phone        = s?.phone || '+49 159 06142923';
@@ -84,7 +84,7 @@ export default function Footer({ settings, lang, setCurrentPage, onAdminTrigger 
                 className="block focus:outline-none"
                 aria-label="FJ BAUSERVICE – Startseite"
               >
-                <Logo iconSize={52} customLogoUrl={customLogo} logoScale={logoScale} />
+                <Logo iconSize={52} customLogoUrl={brand.url} logoScale={brand.scale} logoRatio={brand.ratio} onImageLoad={brand.onImageLoad} />
               </button>
 
               <EditableText

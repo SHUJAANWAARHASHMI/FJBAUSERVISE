@@ -8,6 +8,9 @@ interface LogoProps {
   customLogoUrl?: string;
   /** Scale multiplier 0.5–3.0, default 1 */
   logoScale?: number;
+  /** width / height of the custom logo; lets the box be sized before the image loads */
+  logoRatio?: number;
+  onImageLoad?: (naturalWidth: number, naturalHeight: number) => void;
 }
 
 export default function Logo({
@@ -16,6 +19,8 @@ export default function Logo({
   iconSize = 48,
   customLogoUrl,
   logoScale = 1,
+  logoRatio,
+  onImageLoad,
 }: LogoProps) {
   const scaledSize = Math.round(iconSize * (logoScale || 1));
 
@@ -33,12 +38,20 @@ export default function Logo({
         </div>
       );
     }
+    // Reserve the exact final box up-front so nothing shifts when the image arrives.
+    const boxWidth = logoRatio ? Math.round(Math.min(scaledSize * logoRatio, scaledSize * 3)) : undefined;
     return (
       <div className={`inline-flex items-center gap-3 select-none shrink-0 ${className}`}>
         <img
           src={customLogoUrl}
           alt="Logo"
-          style={{ height: scaledSize, maxWidth: scaledSize * 3, objectFit: 'contain' }}
+          width={boxWidth}
+          height={scaledSize}
+          decoding="sync"
+          loading="eager"
+          fetchPriority="high"
+          onLoad={e => onImageLoad?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+          style={{ height: scaledSize, width: boxWidth, maxWidth: scaledSize * 3, objectFit: 'contain' }}
           className="flex-shrink-0"
         />
       </div>
