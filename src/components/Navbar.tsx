@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { translations } from '../lib/translations';
 import Logo from './Logo';
+import { useBrandLogo } from '../lib/useBrandLogo';
 import { EditableSection, useEditorCtx } from '../lib/editorContext';
 
 interface NavbarProps {
@@ -49,8 +50,7 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
     { id: 'contact',  label: t.nav.contact },
   ];
 
-  const logoScale = parseFloat(s?.logo_scale || '1') || 1;
-  const customLogo = s?.logo_url || '';
+  const brand = useBrandLogo(s);
 
   return (
     <EditableSection id="navbar" label="Navigation">
@@ -65,8 +65,10 @@ export default function Navbar({ currentPage, setCurrentPage, settings, onAdminT
           <div className="flex items-center cursor-pointer group shrink-0" onClick={handleLogoClick}>
             <Logo
               iconSize={isScrolled ? 42 : 52}
-              customLogoUrl={customLogo}
-              logoScale={logoScale}
+              customLogoUrl={brand.url}
+              logoScale={brand.scale}
+              logoRatio={brand.ratio}
+              onImageLoad={brand.onImageLoad}
             />
           </div>
 
